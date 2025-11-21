@@ -1,43 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { ChildEntity ,Column } from 'typeorm'
+import { User } from './user.entity'
 
-@Entity('residents')
-export class Resident {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
 
-  @Column({ unique: true })
-  rut: string;
+@ChildEntity('RESIDENT')
+export class Resident extends User {
 
-  @Column()
-  firstName: string;
+    @Column()
+    phone_number: string;
 
-  @Column()
-  lastName: string;
+    @Column()
+    floor: string;
 
-  @Column({ unique: true })
-  email: string;
+    @Column()
+    apartament: string;
 
-  @Column()
-  password: string;
-
-  @Column({ nullable: true })
-  phone: string;
-
-  @Column({ default: true })
-  isActive: boolean;
-
-  @Column({ default: 'resident' })
-  role: string;
-
-  @Column()
-  block: string;
-
-  @Column()
-  lotNumber: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }
