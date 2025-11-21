@@ -1,33 +1,48 @@
-import { Entity, TableInheritance, PrimaryGeneratedColumn, Column } from 'typeorm'
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm'
+
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  GUARD = 'GUARD',
+  RESIDENT = 'RESIDENT'
+}
 
 @Entity('users')
-@TableInheritance({
-    column: {
-        name: 'user_type',
-        type: 'varchar',
-        default: 'user'
-    }
-})
 export class User{
 
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column()
+    @Column({ unique: true })
     rut: string;
 
     @Column()
-    name: string;
+    firstName: string;
 
     @Column()
-    lastname: string;
+    lastName: string;
 
-    @Column()
+    @Column({ unique: true })
     email: string;
 
     @Column()
     password: string;
 
+    @Column({ nullable: true })
+    phone: string;
 
-    
+    @Column({
+        type: 'enum',
+        enum: UserRole,
+        default: UserRole.GUARD
+    })
+    role: UserRole;
+
+    @Column({ default: true })
+    isActive: boolean;
+
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    createdAt: Date;
+
+    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    updatedAt: Date;
 }
