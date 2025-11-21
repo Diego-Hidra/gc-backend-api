@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsEmail, IsOptional, MinLength } from 'class-validator';
+import { IsNotEmpty, IsEmail, Matches, MinLength } from 'class-validator';
 
 export class CreateResidentDTO {
 
@@ -15,16 +15,16 @@ export class CreateResidentDTO {
     @IsNotEmpty({message: 'El correo es obligatorio'})
     email: string;
     
-    @IsNotEmpty({message: 'El teléfono es obligatorio'})
+    @IsNotEmpty({message: 'El número de teléfono es obligatorio'})
     phone_number: string;
 
     @IsNotEmpty({message: 'La contraseña es obligatoria'})
     @MinLength(8, {message: 'La contraseña debe tener al menos 8 caracteres'})
     password: string;
 
-    @IsNotEmpty({message: 'El bloque/piso es obligatorio'})
-    floor: string;
+    @IsNotEmpty({message: 'El piso debe ser incluido'})
+    floor: string
 
-    @IsNotEmpty({message: 'El número de apartamento/lote es obligatorio'})
+    @IsNotEmpty({message: 'Se debe seleccionar un departamento'})
     apartament: string;
 }

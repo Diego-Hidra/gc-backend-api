@@ -3,22 +3,22 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import * as bcrypt from 'bcrypt';
 import { JwtService } from "@nestjs/jwt";
-import { Resident } from "src/entities/resident.entity";
+import { User } from "src/entities/user.entity";
 import { LoginDto } from "src/dto/login.dto";
 
 @Injectable()
 export class AuthService {
 
     constructor(
-        @InjectRepository(Resident)
-        private residentRepository: Repository<Resident>,
+        @InjectRepository(User)
+        private userRepository: Repository<User>,
         private jwtService: JwtService,
 
     ) {}
 
     async login(loginDto: LoginDto): Promise<{ access_token: string }> {
 
-        const user = await this.residentRepository.findOne({
+        const user = await this.userRepository.findOne({
             where: {email: loginDto.email}
         });
 
@@ -32,9 +32,8 @@ export class AuthService {
         const payload = { 
         sub: user.id, 
         email: user.email,
-        role: user.role, 
-        firstName: user.firstName,
-        lastName: user.lastName
+        user_type: user['user_type'], 
+        name: user.name
         };
 
         return {
