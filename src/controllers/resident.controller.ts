@@ -1,10 +1,11 @@
-import { Controller, Post, Body, UsePipes, ValidationPipe, UseGuards, HttpStatus, HttpCode, Get, Param } from "@nestjs/common";
+import { Controller, Post, Body, UsePipes, ValidationPipe, UseGuards, HttpStatus, HttpCode, Get, Param, Patch } from "@nestjs/common";
 import { ResidentService } from "src/services/resident.service";
 import { CreateResidentDTO } from "src/dto/create-resident.dto";
 import { Resident } from "src/entities/resident.entity";
 import { Roles } from "src/common/decorators/roles.decorator";
 import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 import { RolesGuard } from "src/common/guards/roles.guard";
+import { UpdateResidentDTO } from "src/dto/update-resident.dto";
 
 @Controller('api/resident')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -39,5 +40,14 @@ export class ResidentController {
         
         return this.residentService.findResidentsByID(id);
     }
+
+    @Patch(':id/update')
+    @HttpCode(HttpStatus.OK)
+    @Roles('ADMIN')
+    async updateResident(@Param('id') id: string, @Body() updateDto: UpdateResidentDTO) {
+
+        return this.residentService.updateResident(id, updateDto);
+    }
+
 
 }

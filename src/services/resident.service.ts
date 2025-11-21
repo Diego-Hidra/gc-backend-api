@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Resident } from "src/entities/resident.entity";
 import { CreateResidentDTO } from "src/dto/create-resident.dto";
 import * as bcrypt from 'bcrypt';
+import { UpdateResidentDTO } from "src/dto/update-resident.dto";
 
 @Injectable()
 export class ResidentService {
@@ -64,4 +65,33 @@ export class ResidentService {
 
         return resident;
     }
+    
+    async updateResident(id: string, updateDto: UpdateResidentDTO): Promise<Resident> {
+
+       let passwordHash: string | undefined;
+
+    if (updateDto.password) {
+        const salt = await bcrypt.genSalt();
+        passwordHash = await bcrypt.hash(updateDto.password, salt);
+    }
+    const updateResult = await this.residentRepository.update(id, {...updateDto, ...(passwordHash && { password: passwordHash }),});
+
+    if (updateResult.affected === 0) {
+        throw new NotFoundException(`Residente con ID "${id}" no encontrado.`);
+    }
+
+  
+    const updatedResident = await this.residentRepository.findOne({ 
+        where: { id } 
+    });
+
+
+    if (!updatedResident) {
+        throw new NotFoundException(`Error interno al recuperar el residente ID "${id}".`);
+    }
+
+    return updatedResident; 
+    
+    }
+
 }
