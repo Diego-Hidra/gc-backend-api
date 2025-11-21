@@ -2,6 +2,7 @@ import { Controller, Post, Body, UsePipes, ValidationPipe, UseGuards, HttpStatus
 import { ResidentService } from "src/services/resident.service";
 import { CreateResidentDTO } from "src/dto/create-resident.dto";
 import { Resident } from "src/entities/resident.entity";
+import { Roles } from "src/common/decorators/roles.decorator";
 
 @Controller('api/resident')
 export class ResidentController {
@@ -13,6 +14,7 @@ export class ResidentController {
         whitelist: true,
         forbidNonWhitelisted: true
     }))
+    @Roles('ADMIN')
     async addResident (
         @Body() createResidentDTO: CreateResidentDTO,
     ): Promise<Resident> {
@@ -22,12 +24,14 @@ export class ResidentController {
 
     @Get('all')
     @HttpCode(HttpStatus.OK)
+    @Roles('ADMIN')
     async findAll(): Promise<Resident[]>{
         return this.residentService.findAllResidents();
     }
 
     @Get(':id')
     @HttpCode(HttpStatus.OK)
+    @Roles('ADMIN')
     async findByID(@Param('id') id: string): Promise<Resident> {
         
         return this.residentService.findResidentsByID(id);
