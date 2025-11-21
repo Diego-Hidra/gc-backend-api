@@ -4,6 +4,7 @@ import { CreateResidentDTO } from "src/dto/create-resident.dto";
 import { UpdateResidentDTO } from "src/dto/update-resident.dto";
 import { ChangePasswordDTO } from "src/dto/change-password.dto";
 import { Resident } from "src/entities/resident.entity";
+import { Roles } from "src/common/decorators/roles.decorator";
 
 @Controller('api/resident')
 export class ResidentController {
@@ -18,14 +19,19 @@ export class ResidentController {
         whitelist: true,
         forbidNonWhitelisted: true
     }))
-    async addResident(@Body() createResidentDTO: CreateResidentDTO): Promise<Resident> {
-        return this.residentService.createResident(createResidentDTO);
+    @Roles('ADMIN')
+    async addResident (
+        @Body() createResidentDTO: CreateResidentDTO,
+    ): Promise<Resident> {
+
+        return this.residentService.createResident(createResidentDTO)
     }
 
     // 02.2 Listar Residentes
     @Get('all')
     @HttpCode(HttpStatus.OK)
-    async findAll(): Promise<Resident[]> {
+    @Roles('ADMIN')
+    async findAll(): Promise<Resident[]>{
         return this.residentService.findAllResidents();
     }
 
@@ -53,6 +59,7 @@ export class ResidentController {
     // 02.3 Obtener Residente por ID
     @Get(':id')
     @HttpCode(HttpStatus.OK)
+    @Roles('ADMIN')
     async findByID(@Param('id') id: string): Promise<Resident> {
         return this.residentService.findResidentsByID(id);
     }
