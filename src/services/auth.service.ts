@@ -19,7 +19,7 @@ export class AuthService {
     async login(loginDto: LoginDto): Promise<{ access_token: string }> {
 
         const user = await this.userRepository.findOne({
-            where: {email: loginDto.email}
+            where: {email: loginDto.email},
         });
 
         console.log("Usuario encontrado:", user);
@@ -32,7 +32,7 @@ export class AuthService {
         const payload = { 
         sub: user.id, 
         email: user.email,
-        user_type: user['user_type'], 
+        user_type: user.user_type, 
         name: user.name
         };
 

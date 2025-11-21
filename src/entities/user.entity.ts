@@ -4,8 +4,7 @@ import { Entity, TableInheritance, PrimaryGeneratedColumn, Column } from 'typeor
 @TableInheritance({
     column: {
         name: 'user_type',
-        type: 'varchar',
-        default: 'user'
+        type: 'varchar'
     }
 })
 export class User{
@@ -28,6 +27,12 @@ export class User{
     @Column()
     password: string;
 
+    @Column({
+        name: 'user_type',
+        type: 'varchar',
+        default: 'user'
+    })
+    user_type: string; 
 
     
 }

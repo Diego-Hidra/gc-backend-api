@@ -8,10 +8,11 @@ import { AuthService } from 'src/services/auth.service';
 import { AuthController } from 'src/controllers/auth.controller';
 import { User } from 'src/entities/user.entity';
 import { JwtStrategy } from 'src/auth/jwt.strategy';
+import { Resident } from 'src/entities/resident.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]), 
+    TypeOrmModule.forFeature([User, Resident]), 
     PassportModule, 
     ConfigModule,
     

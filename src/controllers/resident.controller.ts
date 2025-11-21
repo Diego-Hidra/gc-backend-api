@@ -3,8 +3,11 @@ import { ResidentService } from "src/services/resident.service";
 import { CreateResidentDTO } from "src/dto/create-resident.dto";
 import { Resident } from "src/entities/resident.entity";
 import { Roles } from "src/common/decorators/roles.decorator";
+import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
+import { RolesGuard } from "src/common/guards/roles.guard";
 
 @Controller('api/resident')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class ResidentController {
     constructor(private readonly residentService: ResidentService) {}
 
