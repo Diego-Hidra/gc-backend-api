@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ResidentModule } from './modules/resident.module';
 import { AuthModule } from './modules/auth.module';
+import { QrModule } from './modules/qr.module';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { AuthModule } from './modules/auth.module';
 
       synchronize: true
     }),
-    ResidentModule, AuthModule],
+    ResidentModule, AuthModule, QrModule],
   controllers: [],
   providers: [],
 })
