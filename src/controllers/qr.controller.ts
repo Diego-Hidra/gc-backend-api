@@ -2,9 +2,10 @@ import { Controller, Req, UseGuards, Res, Post } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import type { Request, Response } from 'express';
 import * as QRCode from 'qrcode';
+import * as crypto from 'crypto';
 
 interface UserPayload {
-    sub: string;
+    userId: string;
     name: string;
     email: string;
     user_type: string;
@@ -26,16 +27,23 @@ export class QrController{
         @Res() res: Response,
     ) {
         console.log("Datos de usuario inyectados (req.user):", req.user);
-        const { sub: id, name, user_type, email, floor, apartament } = req.user;
+        const QR_SECRET = process.env.QR_SECRET || '';
+        const { userId: id, user_type} = req.user;
+
+        const timestamp = Date.now();
+        const expiryTime = timestamp + (5 * 60 * 1000);
+
+        const dataToHash = `${id}:${user_type}:${expiryTime}`;
+
+        const signature = crypto
+            .createHmac('sha256', QR_SECRET)
+            .update(dataToHash)
+            .digest('hex');
 
         const qrData = JSON.stringify({
             id: id,
-            user: name,
-            email: email,
-            user_type: user_type,
-            floor: floor,
-            apartament: apartament,
-            timestamp: new Date().toISOString(),
+            exp: expiryTime, 
+            sig: signature,  
         });
 
         try {
