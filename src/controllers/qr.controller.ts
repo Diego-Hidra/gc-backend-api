@@ -8,6 +8,8 @@ interface UserPayload {
     name: string;
     email: string;
     user_type: string;
+    floor: string;
+    apartament: string;
 }
 
 interface RequestWithResident extends Request {
@@ -24,13 +26,15 @@ export class QrController{
         @Res() res: Response,
     ) {
         console.log("Datos de usuario inyectados (req.user):", req.user);
-        const { sub: id, name, user_type, email } = req.user;
+        const { sub: id, name, user_type, email, floor, apartament } = req.user;
 
         const qrData = JSON.stringify({
             id: id,
             user: name,
             email: email,
             user_type: user_type,
+            floor: floor,
+            apartament: apartament,
             timestamp: new Date().toISOString(),
         });
 
