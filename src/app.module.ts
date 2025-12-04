@@ -23,6 +23,7 @@ import { LogModule } from './modules/log.module';
         __dirname + '/**/*.entity{.ts,.js}', 
       ],
 
+      dropSchema: false,
       synchronize: true
     }),
     ResidentModule, 
