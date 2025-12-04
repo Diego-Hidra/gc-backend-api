@@ -46,7 +46,7 @@ export class ResidentService {
 
         return this.residentRepository.find({
 
-            select: ['id', 'rut', 'name', 'lastname', 'email', 'phone_number'],
+            select: ['id', 'rut', 'name', 'lastname', 'phone_number', 'floor', 'apartament'],
         });
     }
 
@@ -55,7 +55,7 @@ export class ResidentService {
         const resident = await this.residentRepository.findOne({
             where: {id},
 
-            select: ['id', 'rut', 'name', 'lastname', 'email', 'phone_number'],
+            select: ['id', 'rut', 'name', 'lastname', 'phone_number', 'floor', 'apartament'],
         });
 
         if (!resident){
