@@ -1,0 +1,45 @@
+# Usa tu imagen base de PostgreSQL 17 Alpine
+FROM postgres:17-alpine
+
+
+## 🚀 STEP 1: Install Dependencies & Setup LLVM Environment (Version Specific)
+# 1. Install necessary build tools.
+# 2. Search for the newest clang package and install it (e.g., clang17, clang18).
+#    If the default 'clang' is already the latest, this will be skipped.
+# 3. Create the symlinks the PostgreSQL build system expects (`clang-19` and `/usr/lib/llvm19/bin/llvm-lto`).
+
+RUN apk add --no-cache build-base postgresql-dev git \
+    # Install the latest LLVM/Clang that Alpine provides by default.
+    && apk add --no-cache clang llvm \
+    \
+    # Create symlink for clang-19 (since the makefile explicitly uses this name)
+    && if [ -e /usr/bin/clang ]; then \
+        ln -s /usr/bin/clang /usr/bin/clang-19; \
+    fi \
+    \
+    # Create the required directory structure /usr/lib/llvm19/bin/
+    && /bin/mkdir -p /usr/lib/llvm19/bin \
+    \
+    # Create symlink for llvm-lto (the tool that failed with "Available subcommands: dump-symtab run")
+    # This assumes the installed version of 'llvm-lto' in /usr/bin is now capable.
+    && if [ -e /usr/bin/llvm-lto ]; then \
+        ln -s /usr/bin/llvm-lto /usr/lib/llvm19/bin/llvm-lto; \
+    fi
+
+
+## 🏗️ STEP 2: Clone, Build, and Install pgvector
+# Run the standard build process now that all LLVM dependencies are installed 
+# and correctly symlinked, hoping the newer version supports thinlto.
+RUN git clone --branch v0.7.0 https://github.com/pgvector/pgvector.git \
+    && cd pgvector \
+    && make USE_PG_CONFIG=/usr/local/bin/pg_config \
+    && make install USE_PG_CONFIG=/usr/local/bin/pg_config
+
+
+## 🧹 STEP 3: Clean Up
+# Remove all the build-time dependencies and the temporary symlinks/directories.
+RUN apk del build-base postgresql-dev git clang llvm \
+    && rm -f /usr/bin/clang-19 \
+    && rm -f /usr/lib/llvm19/bin/llvm-lto \
+    && rm -rf /usr/lib/llvm19 \
+    && rm -rf /var/cache/apk/* /pgvector
