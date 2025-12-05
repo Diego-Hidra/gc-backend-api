@@ -1,11 +1,13 @@
-import { Controller, Post, Get, Patch, Body, Param, Query, UsePipes, ValidationPipe, HttpStatus, HttpCode } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, Param, Query, UsePipes, ValidationPipe, HttpStatus, HttpCode, UseGuards } from '@nestjs/common';
 import { VehicleService } from '../services/vehicle.service';
 import { CreateVehicleDto } from '../dto/create-vehicle.dto';
 import { UpdateVehicleDto } from '../dto/update-vehicle.dto';
 import { DeleteVehicleDto } from '../dto/delete-vehicle.dto';
 import { Vehicle, VehicleType } from '../entities/vehicle.entity';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('api')
+@UseGuards(JwtAuthGuard)
 export class VehicleController {
   constructor(private readonly vehicleService: VehicleService) {}
 

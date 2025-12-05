@@ -40,10 +40,6 @@ export class CreateVisitorDto {
   @IsOptional()
   email?: string;
 
-  @IsString()
-  @IsNotEmpty()
-  visitPurpose: string;
-
   @IsDateString()
   @IsNotEmpty()
   scheduledDate: string;

@@ -6,10 +6,6 @@ export class CreateInvitationFromFrequentDto {
   scheduledDate: string;
 
   @IsString()
-  @IsNotEmpty()
-  visitPurpose: string;
-
-  @IsString()
   @IsOptional()
   notes?: string;
 }

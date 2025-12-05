@@ -36,9 +36,6 @@ export class Visitor {
   })
   status: VisitorStatus;
 
-  @Column()
-  visitPurpose: string;
-
   @Column({ type: 'timestamp' })
   scheduledDate: Date;
 

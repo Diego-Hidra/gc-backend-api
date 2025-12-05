@@ -27,19 +27,23 @@ export class CreateInvitationDto {
 
   @IsString()
   @IsOptional()
-  visitorName?: string;
+  firstName?: string;
 
   @IsString()
   @IsOptional()
-  visitorRut?: string;
+  lastName?: string;
 
   @IsString()
   @IsOptional()
-  visitorPhone?: string;
+  rut?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
 
   @IsEmail()
   @IsOptional()
-  visitorEmail?: string;
+  email?: string;
 
   @IsDateString()
   @IsNotEmpty()
@@ -48,10 +52,6 @@ export class CreateInvitationDto {
   @IsDateString()
   @IsOptional()
   expirationDate?: string;
-
-  @IsString()
-  @IsNotEmpty()
-  visitPurpose: string;
 
   @IsString()
   @IsOptional()

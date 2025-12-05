@@ -9,8 +9,14 @@ import { VehicleModule } from './modules/vehicle.module';
 import { FrequentVisitorModule } from './modules/frequent-visitor.module';
 import { LogModule } from './modules/log.module';
 
+import { ConfigModule } from '@nestjs/config';
+
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -18,16 +24,19 @@ import { LogModule } from './modules/log.module';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DATABASE,
+      extra: {
+        client_encoding: 'UTF8',
+      },
 
       entities: [
         __dirname + '/**/*.entity{.ts,.js}', 
       ],
 
       dropSchema: false,
-      synchronize: true
+      synchronize: false
     }),
+    AuthModule, // Debe ir primero para exportar JwtStrategy globalmente
     ResidentModule, 
-    AuthModule, 
     QrModule, 
     VisitorModule, 
     InvitationModule, 

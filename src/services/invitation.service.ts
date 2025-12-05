@@ -29,6 +29,14 @@ export class InvitationService {
     });
   }
 
+  async findByResidentId(residentId: string): Promise<Invitation[]> {
+    return await this.invitationRepository.find({
+      where: { resident: { id: residentId } },
+      relations: ['resident', 'visitor'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async findById(id: string): Promise<Invitation> {
     const invitation = await this.invitationRepository.findOne({
       where: { id },
@@ -49,10 +57,11 @@ export class InvitationService {
     }
 
     let visitorData = {
-      visitorName: createInvitationDto.visitorName,
-      visitorRut: createInvitationDto.visitorRut,
-      visitorPhone: createInvitationDto.visitorPhone,
-      visitorEmail: createInvitationDto.visitorEmail,
+      firstName: createInvitationDto.firstName,
+      lastName: createInvitationDto.lastName,
+      rut: createInvitationDto.rut,
+      phone: createInvitationDto.phone,
+      email: createInvitationDto.email,
       hasVehicle: createInvitationDto.hasVehicle || false,
       vehicleInfo: createInvitationDto.vehicleInfo,
     };
@@ -69,18 +78,19 @@ export class InvitationService {
 
       // Autocompletar con datos del visitante frecuente (se pueden sobrescribir con los del DTO)
       visitorData = {
-        visitorName: createInvitationDto.visitorName || frequentVisitor.name,
-        visitorRut: createInvitationDto.visitorRut || frequentVisitor.rut,
-        visitorPhone: createInvitationDto.visitorPhone || frequentVisitor.phone,
-        visitorEmail: createInvitationDto.visitorEmail || frequentVisitor.email,
+        firstName: createInvitationDto.firstName || frequentVisitor.firstName,
+        lastName: createInvitationDto.lastName || frequentVisitor.lastName,
+        rut: createInvitationDto.rut || frequentVisitor.rut,
+        phone: createInvitationDto.phone || frequentVisitor.phone,
+        email: createInvitationDto.email || frequentVisitor.email,
         hasVehicle: createInvitationDto.hasVehicle ?? (frequentVisitor.vehicleInfo ? true : false),
         vehicleInfo: createInvitationDto.vehicleInfo || frequentVisitor.vehicleInfo,
       };
     }
 
     // Validar que al menos tengamos los datos mínimos
-    if (!visitorData.visitorName || !visitorData.visitorRut || !visitorData.visitorPhone) {
-      throw new BadRequestException('Debe proporcionar visitorName, visitorRut y visitorPhone, o un frequentVisitorId válido');
+    if (!visitorData.firstName || !visitorData.lastName || !visitorData.rut) {
+      throw new BadRequestException('Debe proporcionar firstName, lastName y rut, o un frequentVisitorId válido');
     }
 
     // Si se proporciona visitorId, verificar que el visitante existe
@@ -95,7 +105,6 @@ export class InvitationService {
       ...visitorData,
       scheduledDate: new Date(createInvitationDto.scheduledDate),
       expirationDate: createInvitationDto.expirationDate ? new Date(createInvitationDto.expirationDate) : new Date(createInvitationDto.scheduledDate),
-      visitPurpose: createInvitationDto.visitPurpose,
       notes: createInvitationDto.notes,
       residentId: resident.id,
       visitorId: createInvitationDto.visitorId || null,
@@ -180,12 +189,23 @@ export class InvitationService {
   }
 
   async cancelInvitation(invitationId: string, reason?: string): Promise<Invitation> {
+    console.log(`🚀 [InvitationService] cancelInvitation iniciado para ID: ${invitationId}`);
     const invitation = await this.invitationRepository.findOne({ where: { id: invitationId } });
     if (!invitation) {
+      console.error(`❌ [InvitationService] Invitación no encontrada: ${invitationId}`);
       throw new NotFoundException(`Invitación con ID ${invitationId} no encontrada`);
     }
 
-    if (![InvitationStatus.PENDING, InvitationStatus.APPROVED].includes(invitation.status)) {
+    console.log(`📋 [InvitationService] Estado actual de la invitación: "${invitation.status}"`);
+    console.log(`🔍 [InvitationService] InvitationStatus.PENDING = "${InvitationStatus.PENDING}"`);
+    console.log(`🔍 [InvitationService] InvitationStatus.APPROVED = "${InvitationStatus.APPROVED}"`);
+    
+    const allowedStatuses = [InvitationStatus.PENDING, InvitationStatus.APPROVED];
+    console.log(`📝 [InvitationService] Estados permitidos:`, allowedStatuses);
+    console.log(`✅ [InvitationService] ¿Estado válido?`, allowedStatuses.includes(invitation.status));
+
+    if (!allowedStatuses.includes(invitation.status)) {
+      console.error(`❌ [InvitationService] Estado no válido para cancelar: ${invitation.status}`);
       throw new BadRequestException(`No se puede cancelar una invitación con estado: ${invitation.status}`);
     }
 
@@ -264,7 +284,23 @@ export class InvitationService {
   }
 
   private generateQRCode(invitation: Invitation): string {
-    const data = `INV-${invitation.id}-${Date.now()}`;
-    return crypto.createHash('sha256').update(data).digest('hex').substring(0, 32);
+    // Crear objeto con toda la información necesaria para crear el Visitor
+    const visitorData = {
+      invitationId: invitation.id,
+      firstName: invitation.firstName,
+      lastName: invitation.lastName,
+      rut: invitation.rut,
+      phone: invitation.phone,
+      email: invitation.email,
+      residentId: invitation.residentId,
+      scheduledDate: invitation.scheduledDate.toISOString(),
+      hasVehicle: invitation.hasVehicle,
+      vehicleInfo: invitation.vehicleInfo,
+      notes: invitation.notes,
+      timestamp: Date.now()
+    };
+    
+    // Convertir a JSON string para el QR
+    return JSON.stringify(visitorData);
   }
 }

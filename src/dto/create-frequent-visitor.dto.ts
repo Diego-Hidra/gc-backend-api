@@ -22,23 +22,19 @@ class VehicleInfoDto {
 export class CreateFrequentVisitorDto {
   @IsString()
   @IsNotEmpty()
-  name: string;
+  visitor_name: string;
 
   @IsString()
   @IsNotEmpty()
-  rut: string;
+  visitor_dni: string;
 
   @IsString()
-  @IsNotEmpty()
-  phone: string;
+  @IsOptional()
+  visitor_phone?: string;
 
   @IsEmail()
   @IsOptional()
-  email?: string;
-
-  @IsString()
-  @IsNotEmpty()
-  relationship: string;
+  visitor_email?: string;
 
   @IsString()
   @IsOptional()

@@ -1,554 +1,306 @@
-# Guardian Comunitario - Database Schema
+# 🗄️ Esquema de Base de Datos - Guardian Comunitario
 
-**Database**: `guardian_comunitario`  
-**User**: `postgres`  
-**Password**: `password123`  
-**Type**: PostgreSQL 18
+## 📋 Información General
 
----
-
-## 📋 Tables Overview
-
-### 1. **residents** (Residentes)
-Tabla principal de usuarios residentes del condominio.
-
-| Column | Type | Nullable | Default | Description |
-|--------|------|----------|---------|-------------|
-| `id` | uuid | NO | uuid_generate_v4() | ID único del residente |
-| `email` | varchar | NO | - | Email único del residente |
-| `password` | varchar | NO | - | Contraseña hasheada (bcrypt) |
-| `firstName` | varchar | NO | - | Nombre del residente |
-| `lastName` | varchar | NO | - | Apellido del residente |
-| `rut` | varchar(20) | NO | - | RUT chileno único |
-| `phone` | varchar(20) | YES | - | Teléfono de contacto |
-| `role` | user_role | NO | 'resident' | Rol del usuario (resident, admin, guard) |
-| `isActive` | boolean | NO | true | Estado activo/inactivo |
-| `block` | varchar(10) | NO | - | Bloque del condominio |
-| `lotNumber` | varchar(10) | NO | - | Número de lote/departamento |
-| `createdAt` | timestamp | NO | CURRENT_TIMESTAMP | Fecha de creación |
-| `updatedAt` | timestamp | NO | CURRENT_TIMESTAMP | Fecha de última actualización |
-
-**Indexes**: 
-- PRIMARY KEY (id)
-- UNIQUE (email)
-- UNIQUE (rut)
+**Motor de Base de Datos:** PostgreSQL 18  
+**ORM:** TypeORM  
+**Estrategia:** Single Table Inheritance (para usuarios)  
+**Última actualización:** 3 de diciembre de 2025
 
 ---
 
-### 2. **visitors** (Visitantes)
-Registro de visitantes programados y sus estados.
+## 📊 Tablas
 
-| Column | Type | Nullable | Default | Description |
-|--------|------|----------|---------|-------------|
-| `id` | uuid | NO | uuid_generate_v4() | ID único del visitante |
-| `firstName` | varchar | NO | - | Nombre del visitante |
-| `lastName` | varchar | NO | - | Apellido del visitante |
-| `rut` | varchar(20) | NO | - | RUT del visitante |
-| `phone` | varchar(20) | YES | - | Teléfono del visitante |
-| `email` | varchar | YES | - | Email del visitante |
-| `status` | visitor_status | NO | 'PENDING' | Estado: PENDING, APPROVED, REJECTED, CHECKED_IN, CHECKED_OUT |
-| `scheduledDate` | timestamp | NO | - | Fecha y hora programada de visita |
-| `checkInTime` | timestamp | YES | - | Hora real de ingreso |
-| `checkOutTime` | timestamp | YES | - | Hora real de salida |
-| `visitPurpose` | text | YES | - | Propósito de la visita |
-| `hasVehicle` | boolean | NO | false | Indica si trae vehículo |
-| `vehicleInfo` | jsonb | YES | - | Información del vehículo (JSON) |
-| `rejectionReason` | text | YES | - | Razón de rechazo si aplica |
-| `notes` | text | YES | - | Notas adicionales |
-| `residentId` | uuid | NO | - | FK a residents(id) |
-| `createdAt` | timestamp | NO | CURRENT_TIMESTAMP | Fecha de creación |
-| `updatedAt` | timestamp | NO | CURRENT_TIMESTAMP | Fecha de última actualización |
+### 1. **users** (Tabla principal de usuarios con herencia)
 
-**Foreign Keys**:
-- `residentId` → `residents(id)`
+Tabla base que contiene todos los tipos de usuarios del sistema mediante Single Table Inheritance.
 
----
+| Campo           | Tipo        | Nullable | Default              | Descripción                                             |
+|-----------------|-------------|----------|----------------------|---------------------------------------------------------|
+| `id`            | UUID        | NO       | Auto                 | Identificador único (PK)                                |
+| `rut`           | VARCHAR     | NO       | -                    | RUT del usuario                                         |
+| `name`          | VARCHAR     | NO       | -                    | Nombre del usuario                                      |
+| `lastname`      | VARCHAR     | NO       | -                    | Apellido del usuario                                    |
+| `email`         | VARCHAR     | NO       | -                    | Correo electrónico                                      |
+| `password`      | VARCHAR     | NO       | -                    | Contraseña hasheada (bcrypt)                            |
+| `user_type`     | VARCHAR     | NO       | 'user'               | Discriminador: 'RESIDENT', 'ADMIN', 'GUARD'             |
+| `phone_number`  | VARCHAR     | SÍ       | -                    | Teléfono (solo RESIDENT, ADMIN, GUARD)                  |
+| `floor`         | VARCHAR     | SÍ       | -                    | Piso (solo RESIDENT)                                    |
+| `apartament`    | VARCHAR     | SÍ       | -                    | Número de departamento (solo RESIDENT)                  |
+| `roles`         | TEXT        | SÍ       | -                    | Roles separados por coma (solo ADMIN)                   |
 
-### 3. **invitations** (Invitaciones)
-Invitaciones generadas por residentes con códigos QR.
+**Índices:**
+- Primary Key: `id`
+- Discriminador: `user_type`
 
-| Column | Type | Nullable | Default | Description |
-|--------|------|----------|---------|-------------|
-| `id` | uuid | NO | uuid_generate_v4() | ID único de la invitación |
-| `visitorName` | varchar | NO | - | Nombre completo del visitante |
-| `visitorRut` | varchar(20) | NO | - | RUT del visitante invitado |
-| `visitorPhone` | varchar | YES | - | Teléfono del visitante |
-| `visitorEmail` | varchar | YES | - | Email del visitante |
-| `scheduledDate` | timestamp | NO | - | Fecha programada de visita |
-| `expirationDate` | timestamp | YES | - | Fecha de expiración del QR |
-| `qrCode` | text | YES | - | Código QR generado |
-| `status` | invitation_status | NO | 'PENDING' | PENDING, APPROVED, REJECTED, USED, CANCELLED, EXPIRED |
-| `visitPurpose` | text | YES | - | Propósito de la visita |
-| `notes` | text | YES | - | Notas adicionales sobre la visita |
-| `hasVehicle` | boolean | NO | false | Indica si el visitante trae vehículo |
-| `vehicleInfo` | jsonb | YES | - | Información del vehículo (licensePlate, brand, model, color) |
-| `checkInTime` | timestamp | YES | - | Hora de check-in |
-| `checkOutTime` | timestamp | YES | - | Hora de check-out |
-| `rejectionReason` | text | YES | - | Razón de rechazo |
-| `cancellationReason` | text | YES | - | Razón de cancelación |
-| `residentId` | uuid | NO | - | FK a residents(id) |
-| `visitorId` | uuid | YES | - | FK a visitors(id) si aplica |
-| `createdAt` | timestamp | NO | CURRENT_TIMESTAMP | Fecha de creación |
-| `updatedAt` | timestamp | NO | CURRENT_TIMESTAMP | Fecha de última actualización |
+**Tipos de Usuario:**
+- **RESIDENT**: Usuario residente del condominio (incluye `phone_number`, `floor`, `apartament`)
+- **ADMIN**: Usuario administrador (incluye `phone_number`, `roles[]`)
+- **GUARD**: Usuario guardia (incluye `phone_number`)
 
-**Foreign Keys**:
-- `residentId` → `residents(id)`
-- `visitorId` → `visitors(id)` (nullable)
+**Relaciones:**
+- `resident` → Muchos `visitors` (un residente puede tener múltiples visitantes)
+- `resident` → Muchos `invitations` (un residente puede crear múltiples invitaciones)
+- `resident` → Muchos `vehicles` (un residente puede tener múltiples vehículos)
+- `resident` → Muchos `frequent_visitors` (un residente puede tener múltiples visitantes frecuentes)
 
 ---
 
-### 4. **frequent_visitors** (Visitantes Frecuentes)
-Lista de visitantes frecuentes preaprobados por residentes.
+### 2. **visitors**
 
-| Column | Type | Nullable | Default | Description |
-|--------|------|----------|---------|-------------|
-| `id` | uuid | NO | uuid_generate_v4() | ID único |
-| `name` | varchar | NO | - | Nombre completo del visitante frecuente |
-| `rut` | varchar(20) | NO | - | RUT del visitante |
-| `phone` | varchar(20) | YES | - | Teléfono de contacto |
-| `email` | varchar | YES | - | Email del visitante frecuente |
-| `relationship` | varchar | YES | - | Relación con el residente (ej: "Familiar", "Empleado") |
-| `visitCount` | integer | NO | 0 | Contador de visitas realizadas |
-| `lastVisit` | timestamp | YES | - | Fecha de última visita |
-| `isActive` | boolean | NO | true | Estado activo/inactivo |
-| `vehicleInfo` | jsonb | YES | - | Información de vehículos autorizados |
-| `notes` | text | YES | - | Notas adicionales |
-| `residentId` | uuid | NO | - | FK a residents(id) |
-| `createdAt` | timestamp | NO | CURRENT_TIMESTAMP | Fecha de creación |
-| `updatedAt` | timestamp | NO | CURRENT_TIMESTAMP | Fecha de última actualización |
+Registro de visitantes al condominio.
 
-**Foreign Keys**:
-- `residentId` → `residents(id)`
+| Campo            | Tipo        | Nullable | Default     | Descripción                                             |
+|------------------|-------------|----------|-------------|---------------------------------------------------------|
+| `id`             | UUID        | NO       | Auto        | Identificador único (PK)                                |
+| `firstName`      | VARCHAR     | NO       | -           | Nombre del visitante                                    |
+| `lastName`       | VARCHAR     | NO       | -           | Apellido del visitante                                  |
+| `rut`            | VARCHAR     | NO       | -           | RUT del visitante                                       |
+| `phone`          | VARCHAR     | NO       | -           | Teléfono de contacto                                    |
+| `email`          | VARCHAR     | SÍ       | NULL        | Correo electrónico                                      |
+| `status`         | ENUM        | NO       | 'PENDING'   | Estado: PENDING, APPROVED, REJECTED, IN_PROPERTY, etc.  |
+| `visitPurpose`   | VARCHAR     | NO       | -           | Motivo de la visita                                     |
+| `scheduledDate`  | TIMESTAMP   | NO       | -           | Fecha/hora programada de visita                         |
+| `checkInTime`    | TIMESTAMP   | SÍ       | NULL        | Hora de ingreso real                                    |
+| `checkOutTime`   | TIMESTAMP   | SÍ       | NULL        | Hora de salida real                                     |
+| `hasVehicle`     | BOOLEAN     | NO       | false       | Indica si trae vehículo                                 |
+| `vehicleInfo`    | JSONB       | SÍ       | NULL        | Info del vehículo (JSON)                                |
+| `notes`          | VARCHAR     | SÍ       | NULL        | Notas adicionales                                       |
+| `residentId`     | UUID        | NO       | -           | ID del residente que autoriza (FK → users.id)           |
+| `createdAt`      | TIMESTAMP   | NO       | NOW()       | Fecha de creación                                       |
+| `updatedAt`      | TIMESTAMP   | NO       | NOW()       | Fecha de última actualización                           |
 
----
+**Relaciones:**
+- `residentId` → `users.id` (ManyToOne)
 
-### 5. **vehicles** (Vehículos)
-Registro de vehículos de residentes.
-
-| Column | Type | Nullable | Default | Description |
-|--------|------|----------|---------|-------------|
-| `id` | uuid | NO | uuid_generate_v4() | ID único del vehículo |
-| `licensePlate` | varchar | NO | - | Patente única del vehículo |
-| `brand` | varchar | NO | - | Marca (ej: Toyota, Chevrolet) |
-| `model` | varchar | NO | - | Modelo del vehículo |
-| `year` | integer | NO | - | Año de fabricación |
-| `color` | varchar | NO | - | Color del vehículo |
-| `type` | vehicle_type | NO | - | CAR, MOTORCYCLE, TRUCK, VAN, OTHER |
-| `isActive` | boolean | NO | true | Estado activo (soft delete) |
-| `deleteReason` | text | YES | - | Razón de eliminación |
-| `deleteNotes` | text | YES | - | Notas sobre eliminación |
-| `residentId` | uuid | NO | - | FK a residents(id) |
-| `createdAt` | timestamp | NO | CURRENT_TIMESTAMP | Fecha de registro |
-| `updatedAt` | timestamp | NO | CURRENT_TIMESTAMP | Fecha de actualización |
-
-**Foreign Keys**:
-- `residentId` → `residents(id)`
-
-**Indexes**:
-- UNIQUE (licensePlate)
+**Índices:**
+- Primary Key: `id`
+- Foreign Key: `residentId`
 
 ---
 
-### 6. **logs** (Registros de Auditoría)
-Sistema de logging para auditoría y trazabilidad.
+### 3. **invitations**
 
-| Column | Type | Nullable | Default | Description |
-|--------|------|----------|---------|-------------|
-| `id` | uuid | NO | uuid_generate_v4() | ID único del log |
-| `type` | log_type | NO | - | SYSTEM, USER, VISITOR, SECURITY, ERROR |
-| `action` | log_action | NO | - | Acción realizada (CREATE, UPDATE, DELETE, LOGIN, etc.) |
-| `description` | varchar | NO | - | Descripción de la acción |
-| `userId` | varchar | YES | - | ID del usuario que realizó la acción |
-| `entityType` | varchar | YES | - | Tipo de entidad afectada (resident, visitor, etc.) |
-| `entityId` | varchar | YES | - | ID de la entidad afectada |
-| `details` | jsonb | YES | - | Detalles adicionales en JSON |
-| `metadata` | jsonb | YES | - | Metadatos adicionales |
-| `ipAddress` | varchar | YES | - | Dirección IP de origen |
-| `userAgent` | varchar | YES | - | User agent del navegador |
-| `timestamp` | timestamp | NO | CURRENT_TIMESTAMP | Fecha y hora del evento |
-| `severity` | varchar | NO | 'info' | Severidad: info, warning, error, critical |
+Invitaciones creadas por residentes para sus visitantes.
+
+| Campo                | Tipo        | Nullable | Default     | Descripción                                             |
+|----------------------|-------------|----------|-------------|---------------------------------------------------------|
+| `id`                 | UUID        | NO       | Auto        | Identificador único (PK)                                |
+| `visitorName`        | VARCHAR     | NO       | -           | Nombre completo del visitante                           |
+| `visitorRut`         | VARCHAR     | NO       | -           | RUT del visitante                                       |
+| `visitorPhone`       | VARCHAR     | NO       | -           | Teléfono del visitante                                  |
+| `visitorEmail`       | VARCHAR     | SÍ       | NULL        | Email del visitante                                     |
+| `scheduledDate`      | TIMESTAMP   | NO       | -           | Fecha programada de visita                              |
+| `expirationDate`     | TIMESTAMP   | NO       | -           | Fecha de expiración de la invitación                    |
+| `qrCode`             | VARCHAR     | SÍ       | NULL        | Código QR generado                                      |
+| `status`             | ENUM        | NO       | 'PENDING'   | PENDING, APPROVED, REJECTED, USED, EXPIRED, CANCELLED   |
+| `visitPurpose`       | VARCHAR     | NO       | -           | Propósito de la visita                                  |
+| `notes`              | VARCHAR     | SÍ       | NULL        | Notas adicionales                                       |
+| `hasVehicle`         | BOOLEAN     | NO       | false       | Indica si trae vehículo                                 |
+| `vehicleInfo`        | JSONB       | SÍ       | NULL        | Info del vehículo (JSON)                                |
+| `checkInTime`        | TIMESTAMP   | SÍ       | NULL        | Hora de entrada                                         |
+| `checkOutTime`       | TIMESTAMP   | SÍ       | NULL        | Hora de salida                                          |
+| `rejectionReason`    | VARCHAR     | SÍ       | NULL        | Razón de rechazo                                        |
+| `cancellationReason` | VARCHAR     | SÍ       | NULL        | Razón de cancelación                                    |
+| `residentId`         | UUID        | NO       | -           | ID del residente (FK → users.id)                        |
+| `visitorId`          | UUID        | SÍ       | NULL        | ID del visitante registrado (FK → visitors.id)          |
+| `createdAt`          | TIMESTAMP   | NO       | NOW()       | Fecha de creación                                       |
+| `updatedAt`          | TIMESTAMP   | NO       | NOW()       | Fecha de última actualización                           |
+
+**Relaciones:**
+- `residentId` → `users.id` (ManyToOne)
+- `visitorId` → `visitors.id` (ManyToOne, opcional)
+
+**Índices:**
+- Primary Key: `id`
+- Foreign Keys: `residentId`, `visitorId`
+- Index: `status`, `scheduledDate`
 
 ---
 
-## 🔍 Views (Vistas)
+### 4. **vehicles**
 
-### 7. **active_visitors_today**
-Vista que muestra visitantes activos del día actual.
+Registro de vehículos de los residentes.
 
-### 8. **pending_invitations**
-Vista que muestra invitaciones pendientes de aprobación.
+| Campo           | Tipo        | Nullable | Default | Descripción                                                      |
+|-----------------|-------------|----------|---------|------------------------------------------------------------------|
+| `id`            | UUID        | NO       | Auto    | Identificador único (PK)                                         |
+| `licensePlate`  | VARCHAR     | NO       | -       | Patente del vehículo (UNIQUE)                                    |
+| `brand`         | VARCHAR     | NO       | -       | Marca del vehículo                                               |
+| `model`         | VARCHAR     | NO       | -       | Modelo del vehículo                                              |
+| `year`          | INTEGER     | NO       | -       | Año del vehículo                                                 |
+| `color`         | VARCHAR     | NO       | -       | Color del vehículo                                               |
+| `type`          | ENUM        | NO       | 'SEDAN' | SEDAN, SUV, HATCHBACK, PICKUP, VAN, MOTORCYCLE, OTHER            |
+| `isActive`      | BOOLEAN     | NO       | true    | Estado activo/eliminado lógicamente                              |
+| `deleteReason`  | VARCHAR     | SÍ       | NULL    | Razón de eliminación                                             |
+| `deleteNotes`   | VARCHAR     | SÍ       | NULL    | Notas sobre la eliminación                                       |
+| `residentId`    | UUID        | NO       | -       | ID del residente propietario (FK → users.id)                     |
+| `createdAt`     | TIMESTAMP   | NO       | NOW()   | Fecha de registro                                                |
+| `updatedAt`     | TIMESTAMP   | NO       | NOW()   | Fecha de última actualización                                    |
 
-### 9. **vehicle_stats**
-Vista con estadísticas de vehículos por residente.
+**Relaciones:**
+- `residentId` → `users.id` (ManyToOne)
+
+**Índices:**
+- Primary Key: `id`
+- Unique: `licensePlate`
+- Foreign Key: `residentId`
 
 ---
 
-## 📊 Custom Types (ENUMs)
+### 5. **frequent_visitors**
 
-### user_role
-```sql
-'resident' | 'admin' | 'guard'
+Visitantes frecuentes registrados por residentes.
+
+| Campo          | Tipo        | Nullable | Default | Descripción                                                      |
+|----------------|-------------|----------|---------|------------------------------------------------------------------|
+| `id`           | UUID        | NO       | Auto    | Identificador único (PK)                                         |
+| `name`         | VARCHAR     | NO       | -       | Nombre completo                                                  |
+| `rut`          | VARCHAR     | NO       | -       | RUT del visitante                                                |
+| `phone`        | VARCHAR     | NO       | -       | Teléfono                                                         |
+| `email`        | VARCHAR     | SÍ       | NULL    | Email                                                            |
+| `relationship` | VARCHAR     | NO       | -       | Relación con el residente (familiar, amigo, etc.)                |
+| `visitCount`   | INTEGER     | NO       | 0       | Contador de visitas realizadas                                   |
+| `lastVisit`    | TIMESTAMP   | SÍ       | NULL    | Fecha de última visita                                           |
+| `notes`        | VARCHAR     | SÍ       | NULL    | Notas adicionales                                                |
+| `vehicleInfo`  | JSONB       | SÍ       | NULL    | Info de vehículo (JSON)                                          |
+| `isActive`     | BOOLEAN     | NO       | true    | Estado activo/inactivo                                           |
+| `residentId`   | UUID        | NO       | -       | ID del residente (FK → users.id)                                 |
+| `createdAt`    | TIMESTAMP   | NO       | NOW()   | Fecha de creación                                                |
+| `updatedAt`    | TIMESTAMP   | NO       | NOW()   | Fecha de última actualización                                    |
+
+**Relaciones:**
+- `residentId` → `users.id` (ManyToOne)
+
+**Índices:**
+- Primary Key: `id`
+- Foreign Key: `residentId`
+
+---
+
+### 6. **logs**
+
+Registro de auditoría y eventos del sistema.
+
+| Campo        | Tipo         | Nullable | Default | Descripción                                                      |
+|--------------|--------------|----------|---------|------------------------------------------------------------------|
+| `id`         | UUID         | NO       | Auto    | Identificador único (PK)                                         |
+| `type`       | ENUM         | NO       | -       | access, visitor, vehicle, incident, system                       |
+| `action`     | ENUM         | NO       | -       | Acción específica realizada (ver enum LogAction)                 |
+| `description`| VARCHAR(500) | NO       | -       | Descripción del evento                                           |
+| `userId`     | UUID         | SÍ       | NULL    | ID del usuario que realizó la acción (FK → users.id)             |
+| `entityType` | VARCHAR(100) | SÍ       | NULL    | Tipo de entidad afectada (visitor, vehicle, etc.)                |
+| `entityId`   | UUID         | SÍ       | NULL    | ID de la entidad afectada                                        |
+| `details`    | JSONB        | SÍ       | NULL    | Detalles adicionales del evento                                  |
+| `metadata`   | JSONB        | SÍ       | NULL    | Metadata (IP, dispositivo, navegador, etc.)                      |
+| `ipAddress`  | VARCHAR(45)  | SÍ       | NULL    | Dirección IP del cliente                                         |
+| `userAgent`  | VARCHAR(255) | SÍ       | NULL    | User agent del navegador                                         |
+| `timestamp`  | TIMESTAMP    | NO       | NOW()   | Fecha y hora del evento                                          |
+| `severity`   | VARCHAR(20)  | NO       | 'info'  | Nivel: info, warning, error, critical                            |
+
+**Relaciones:**
+- `userId` → `users.id` (ManyToOne, ON DELETE SET NULL)
+
+**Índices:**
+- Primary Key: `id`
+- Index: `type`, `action`, `timestamp`, `userId`
+- Index compuesto: (`entityType`, `entityId`)
+
+**Tipos de Log (LogType):**
+- `access`: Registros de acceso al condominio
+- `visitor`: Eventos relacionados con visitantes
+- `vehicle`: Eventos de vehículos
+- `incident`: Incidentes reportados
+- `system`: Eventos del sistema
+
+**Acciones de Log (LogAction):**
+- **Access**: check_in, check_out, access_denied, access_granted
+- **Visitor**: visitor_registered, visitor_approved, visitor_rejected, invitation_created, invitation_used, invitation_cancelled
+- **Vehicle**: vehicle_registered, vehicle_updated, vehicle_deleted, vehicle_activated
+- **Incident**: incident_reported, incident_resolved
+- **System**: user_login, user_logout, system_error, config_changed
+
+---
+
+## 🔗 Diagrama de Relaciones
+
 ```
+users (Single Table Inheritance)
+├── RESIDENT
+│   ├── visitors (1:N)
+│   ├── invitations (1:N)
+│   ├── vehicles (1:N)
+│   └── frequent_visitors (1:N)
+├── ADMIN
+└── GUARD
 
-### visitor_status
-```sql
-'PENDING' | 'APPROVED' | 'REJECTED' | 'CHECKED_IN' | 'CHECKED_OUT'
-```
+invitations
+└── visitor (N:1, opcional)
 
-### invitation_status
-```sql
-'PENDING' | 'APPROVED' | 'REJECTED' | 'USED' | 'CANCELLED' | 'EXPIRED'
-```
-
-### vehicle_type
-```sql
-'CAR' | 'MOTORCYCLE' | 'TRUCK' | 'VAN' | 'OTHER'
-```
-
-### log_type
-```sql
-'SYSTEM' | 'USER' | 'VISITOR' | 'SECURITY' | 'ERROR'
-```
-
-### log_action
-```sql
-'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'ACCESS_GRANTED' | 'ACCESS_DENIED'
-```
-
----
-
-## 🔗 Relationships
-
-```
-residents (1) ----< (N) visitors
-residents (1) ----< (N) invitations  
-residents (1) ----< (N) frequent_visitors
-residents (1) ----< (N) vehicles
-residents (1) ----< (N) logs
-
-invitations (1) ----< (0..1) visitors
-```
-
----
-
-## 📝 Important Notes
-
-1. **Case Sensitivity**: Column names like `firstName`, `lastName`, `isActive` use camelCase and **MUST** be quoted in SQL queries: `"firstName"`
-
-2. **UUID Generation**: All tables use `uuid_generate_v4()` for primary keys. Ensure `uuid-ossp` extension is enabled:
-   ```sql
-   CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-   ```
-
-3. **Timestamps**: `createdAt` and `updatedAt` are automatically set. Consider adding triggers for `updatedAt`.
-
-4. **Soft Deletes**: `residents`, `vehicles`, and `frequent_visitors` use `isActive` flag instead of hard deletes.
-
-5. **Foreign Key Cascades**: Review cascade behavior for deletions (currently not specified in schema).
-
----
-
-## 🔧 Sample Data Requirements
-
-For testing, ensure you have at least:
-- 3 residents with valid RUTs (format: 12.345.678-9)
-- Each resident should have unique email and RUT
-- At least one resident with hashed password for login testing
-- Test data should include residents in different blocks/lots
-
----
-
-## 📝 Example Data
-
-### 1. **residents** Example
-
-```json
-{
-  "id": "123e4567-e89b-12d3-a456-426614174000",
-  "email": "juan.perez@email.com",
-  "password": "$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW",
-  "firstName": "Juan",
-  "lastName": "Pérez",
-  "rut": "12.345.678-9",
-  "phone": "+56912345678",
-  "role": "resident",
-  "isActive": true,
-  "block": "A",
-  "lotNumber": "101",
-  "createdAt": "2024-01-15T10:30:00.000Z",
-  "updatedAt": "2024-01-15T10:30:00.000Z"
-}
+logs
+└── user (N:1, opcional)
 ```
 
 ---
 
-### 2. **visitors** Example
+## 📝 Notas Importantes
 
-```json
-{
-  "id": "223e4567-e89b-12d3-a456-426614174001",
-  "firstName": "María",
-  "lastName": "González",
-  "rut": "18.765.432-1",
-  "phone": "+56987654321",
-  "email": "maria.gonzalez@email.com",
-  "status": "CHECKED_IN",
-  "scheduledDate": "2024-11-21T14:00:00.000Z",
-  "checkInTime": "2024-11-21T14:05:00.000Z",
-  "checkOutTime": null,
-  "visitPurpose": "Reunión familiar",
-  "hasVehicle": true,
-  "vehicleInfo": {
-    "licensePlate": "ABCD12",
-    "brand": "Toyota",
-    "model": "Corolla",
-    "color": "Blanco"
-  },
-  "rejectionReason": null,
-  "notes": "Visitante frecuente, familia directa",
-  "residentId": "123e4567-e89b-12d3-a456-426614174000",
-  "createdAt": "2024-11-20T09:15:00.000Z",
-  "updatedAt": "2024-11-21T14:05:00.000Z"
-}
-```
+### Single Table Inheritance
+Todos los tipos de usuarios se almacenan en una sola tabla `users` con un campo discriminador `user_type`. Las columnas específicas de cada tipo pueden ser NULL si no aplican.
 
----
+### Eliminación Lógica
+- **vehicles**: Usa `isActive` para eliminación lógica
+- **frequent_visitors**: Usa `isActive` para marcar inactivos
 
-### 3. **invitations** Example
+### Campos JSONB
+Se utilizan campos JSONB para almacenar información flexible:
+- `vehicleInfo`: Información de vehículos en visitors/invitations/frequent_visitors
+- `details`: Detalles de eventos en logs
+- `metadata`: Metadata adicional en logs
 
-```json
-{
-  "id": "323e4567-e89b-12d3-a456-426614174002",
-  "visitorName": "Carlos Rodríguez",
-  "visitorRut": "16.543.210-K",
-  "visitorPhone": "+56976543210",
-  "visitorEmail": "carlos.rodriguez@email.com",
-  "scheduledDate": "2024-11-22T16:00:00.000Z",
-  "expirationDate": "2024-11-22T23:59:59.000Z",
-  "qrCode": "INV-2024-11-22-123e4567",
-  "status": "PENDING",
-  "visitPurpose": "Entrega de paquete",
-  "notes": "Delivery de compra online",
-  "hasVehicle": false,
-  "vehicleInfo": null,
-  "checkInTime": null,
-  "checkOutTime": null,
-  "rejectionReason": null,
-  "cancellationReason": null,
-  "residentId": "123e4567-e89b-12d3-a456-426614174000",
-  "visitorId": null,
-  "createdAt": "2024-11-21T10:30:00.000Z",
-  "updatedAt": "2024-11-21T10:30:00.000Z"
-}
-```
+### Timestamps Automáticos
+- `createdAt`: Se establece automáticamente al crear el registro
+- `updatedAt`: Se actualiza automáticamente en cada modificación
+- `timestamp`: Se establece al crear logs
+
+### Estados (ENUM)
+
+**VisitorStatus:**
+- PENDING: Pendiente de aprobación
+- APPROVED: Aprobado
+- REJECTED: Rechazado
+- IN_PROPERTY: Actualmente en la propiedad
+- COMPLETED: Visita completada
+
+**InvitationStatus:**
+- PENDING: Pendiente de aprobación
+- APPROVED: Aprobada
+- REJECTED: Rechazada
+- USED: Ya fue utilizada
+- EXPIRED: Expirada
+- CANCELLED: Cancelada
+
+**VehicleType:**
+- SEDAN, SUV, HATCHBACK, PICKUP, VAN, MOTORCYCLE, OTHER
 
 ---
 
-### 4. **frequent_visitors** Example
+## 🔒 Seguridad
 
-```json
-{
-  "id": "423e4567-e89b-12d3-a456-426614174003",
-  "name": "Pedro Sánchez",
-  "rut": "14.987.654-3",
-  "phone": "+56965432109",
-  "email": "pedro.sanchez@email.com",
-  "relationship": "Empleado doméstico",
-  "visitCount": 45,
-  "lastVisit": "2024-11-20T08:30:00.000Z",
-  "isActive": true,
-  "vehicleInfo": {
-    "vehicles": [
-      {
-        "licensePlate": "WXYZ98",
-        "brand": "Suzuki",
-        "model": "Swift",
-        "color": "Rojo"
-      }
-    ]
-  },
-  "notes": "Trabaja de lunes a viernes, 8:00 AM - 5:00 PM",
-  "residentId": "123e4567-e89b-12d3-a456-426614174000",
-  "createdAt": "2024-06-01T09:00:00.000Z",
-  "updatedAt": "2024-11-20T08:30:00.000Z"
-}
-```
+- **Contraseñas**: Hasheadas con bcrypt (salt rounds: 10)
+- **UUIDs**: Se usan en lugar de IDs incrementales para mayor seguridad
+- **Logs**: Todos los eventos críticos se registran para auditoría
 
 ---
 
-### 5. **vehicles** Example
+## 🔄 Migraciones
 
-```json
-{
-  "id": "523e4567-e89b-12d3-a456-426614174004",
-  "licensePlate": "GGRT45",
-  "brand": "Chevrolet",
-  "model": "Onix",
-  "year": 2022,
-  "color": "Gris",
-  "type": "CAR",
-  "isActive": true,
-  "deleteReason": null,
-  "deleteNotes": null,
-  "residentId": "123e4567-e89b-12d3-a456-426614174000",
-  "createdAt": "2024-01-20T11:00:00.000Z",
-  "updatedAt": "2024-01-20T11:00:00.000Z"
-}
-```
-
-**Example of Soft-Deleted Vehicle:**
-
-```json
-{
-  "id": "623e4567-e89b-12d3-a456-426614174005",
-  "licensePlate": "KLMN67",
-  "brand": "Nissan",
-  "model": "Versa",
-  "year": 2018,
-  "color": "Azul",
-  "type": "CAR",
-  "isActive": false,
-  "deleteReason": "Vehículo vendido",
-  "deleteNotes": "Residente vendió el vehículo en octubre 2024",
-  "residentId": "123e4567-e89b-12d3-a456-426614174000",
-  "createdAt": "2022-03-10T14:20:00.000Z",
-  "updatedAt": "2024-10-15T09:45:00.000Z"
-}
-```
+Actualmente se usa `synchronize: true` en desarrollo. Para producción se recomienda:
+1. Desactivar `synchronize`
+2. Usar migraciones de TypeORM
+3. Versionamiento de cambios de esquema
 
 ---
 
-### 6. **logs** Example
-
-```json
-{
-  "id": "723e4567-e89b-12d3-a456-426614174006",
-  "type": "VISITOR",
-  "action": "ACCESS_GRANTED",
-  "description": "Visitante María González ingresó al condominio",
-  "userId": "123e4567-e89b-12d3-a456-426614174000",
-  "entityType": "visitor",
-  "entityId": "223e4567-e89b-12d3-a456-426614174001",
-  "details": {
-    "visitorName": "María González",
-    "visitorRut": "18.765.432-1",
-    "residentName": "Juan Pérez",
-    "checkInTime": "2024-11-21T14:05:00.000Z",
-    "hasVehicle": true,
-    "vehiclePlate": "ABCD12"
-  },
-  "metadata": {
-    "guardName": "Guardia Principal",
-    "gate": "Entrada Norte",
-    "checkType": "QR_SCAN"
-  },
-  "ipAddress": "192.168.1.105",
-  "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)",
-  "timestamp": "2024-11-21T14:05:30.000Z",
-  "severity": "info"
-}
-```
-
-**Example of Error Log:**
-
-```json
-{
-  "id": "823e4567-e89b-12d3-a456-426614174007",
-  "type": "ERROR",
-  "action": "LOGIN",
-  "description": "Intento de login fallido - credenciales incorrectas",
-  "userId": null,
-  "entityType": "resident",
-  "entityId": null,
-  "details": {
-    "email": "usuario.invalido@email.com",
-    "reason": "Invalid credentials",
-    "attemptNumber": 3
-  },
-  "metadata": {
-    "loginMethod": "email_password",
-    "clientType": "mobile_app"
-  },
-  "ipAddress": "203.0.113.45",
-  "userAgent": "Guardian-Mobile-App/1.0.0 (Android 12)",
-  "timestamp": "2024-11-21T15:30:22.000Z",
-  "severity": "warning"
-}
-```
-
----
-
-## 💡 Usage Examples
-
-### Creating a Resident with Password
-
-```typescript
-// Password: "MiPassword123"
-// Hashed with bcrypt (10 rounds)
-const hashedPassword = "$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW";
-
-const newResident = {
-  email: "nuevo.residente@email.com",
-  password: hashedPassword,
-  firstName: "Ana",
-  lastName: "Martínez",
-  rut: "19.876.543-2",
-  phone: "+56923456789",
-  block: "B",
-  lotNumber: "205"
-};
-```
-
-### Creating an Invitation with QR
-
-```typescript
-const invitation = {
-  visitorName: "Roberto Silva",
-  visitorRut: "17.654.321-8",
-  visitorPhone: "+56945678901",
-  scheduledDate: new Date("2024-11-23T10:00:00Z"),
-  expirationDate: new Date("2024-11-23T23:59:59Z"),
-  qrCode: `INV-${Date.now()}-${uuidv4()}`,
-  status: "PENDING",
-  visitPurpose: "Visita social",
-  hasVehicle: true,
-  vehicleInfo: {
-    licensePlate: "PQRS78",
-    brand: "Mazda",
-    model: "3",
-    color: "Negro"
-  },
-  residentId: "123e4567-e89b-12d3-a456-426614174000"
-};
-```
-
-### Query Examples
-
-```sql
--- Get all active visitors today
-SELECT * FROM visitors 
-WHERE status = 'CHECKED_IN' 
-  AND DATE("checkInTime") = CURRENT_DATE;
-
--- Get resident's vehicles
-SELECT * FROM vehicles 
-WHERE "residentId" = '123e4567-e89b-12d3-a456-426614174000' 
-  AND "isActive" = true;
-
--- Get pending invitations
-SELECT * FROM invitations 
-WHERE status = 'PENDING' 
-  AND "scheduledDate" >= CURRENT_TIMESTAMP;
-
--- Get frequent visitors by resident
-SELECT * FROM frequent_visitors 
-WHERE "residentId" = '123e4567-e89b-12d3-a456-426614174000' 
-  AND "isActive" = true
-ORDER BY "visitCount" DESC;
-
--- Get security logs from last 24 hours
-SELECT * FROM logs 
-WHERE type = 'SECURITY' 
-  AND timestamp >= NOW() - INTERVAL '24 hours'
-ORDER BY timestamp DESC;
-```
+**Última actualización:** 3 de diciembre de 2025  
+**Versión del esquema:** 1.0.0

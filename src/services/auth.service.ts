@@ -6,53 +6,78 @@ import { JwtService } from "@nestjs/jwt";
 import { User } from "src/entities/user.entity";
 import { LoginDto } from "src/dto/login.dto";
 import { Resident } from "src/entities/resident.entity";
+import { Guard } from "src/entities/guard.entity";
+import { Admin } from "src/entities/admin.entity";
 
 @Injectable()
 export class AuthService {
 
     constructor(
-        @InjectRepository(User)
-        private userRepository: Repository<User>,
+        @InjectRepository(Resident)
+        private residentRepository: Repository<Resident>,
+        @InjectRepository(Guard)
+        private guardRepository: Repository<Guard>,
+        @InjectRepository(Admin)
+        private adminRepository: Repository<Admin>,
         private jwtService: JwtService,
 
     ) {}
 
     async login(loginDto: LoginDto): Promise<{ access_token: string }> {
+        console.log('\n🔐 AUTH SERVICE - Procesando login');
+        console.log('📧 Email:', loginDto.email);
 
-        const user = await this.userRepository.findOne({
-            where: {email: loginDto.email},
+        // Solo buscar en residents (login exclusivo para residentes)
+        const user = await this.residentRepository.findOne({
+            where: { email: loginDto.email },
         });
 
-        let floor: string | undefined;
-        let apartament: string | undefined;
+        if (!user) {
+            console.error('❌ Residente no encontrado:', loginDto.email);
+            throw new UnauthorizedException('Credenciales inválidas. Solo residentes pueden acceder.');
+        }
         
-        console.log("Usuario encontrado:", user);
+        console.log('✅ Residente encontrado:', {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            block: user.block,
+            apartment: user.apartment
+        });
 
-         if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
-         throw new UnauthorizedException('Credenciales inválidas.');
-
+        const passwordMatch = await bcrypt.compare(loginDto.password, user.password);
+        console.log('🔑 Validación de contraseña:', passwordMatch ? 'Correcta' : 'Incorrecta');
+        
+        if (!passwordMatch) {
+            console.error('❌ Contraseña incorrecta para:', loginDto.email);
+            throw new UnauthorizedException('Credenciales inválidas.');
         }
 
-        if (user instanceof Resident) {
-            
-            floor = user.floor;
-            apartament = user.apartament;
-        }
-
+        // Datos del residente
+        const floor = user.floor;
+        const apartament = user.apartment;
+        const block = user.block;
+        const lotNumber = user.lotNumber;
+        console.log('🏢 Datos de residente:', { floor, apartament, block, lotNumber });
 
         const payload = { 
-        sub: user.id, 
-        email: user.email,
-        user_type: user.user_type, 
-        name: user.name,
-        floor: floor,
-        apartament: apartament
+            sub: user.id, 
+            email: user.email,
+            user_type: user.role, 
+            name: user.firstName + ' ' + user.lastName,
+            floor: floor,
+            apartament: apartament,
+            block: block,
+            lotNumber: lotNumber
         };
 
-        return {
-        access_token: this.jwtService.sign(payload),
-        };
+        const access_token = this.jwtService.sign(payload);
+        console.log('🎫 Token JWT generado exitosamente');
+        console.log('📦 Payload:', JSON.stringify(payload, null, 2));
 
+        return { access_token };
     };
 
 }

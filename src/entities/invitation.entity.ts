@@ -17,16 +17,19 @@ export class Invitation {
   id: string;
 
   @Column()
-  visitorName: string;
+  firstName: string;
 
   @Column()
-  visitorRut: string;
+  lastName: string;
 
   @Column()
-  visitorPhone: string;
+  rut: string;
 
   @Column({ nullable: true })
-  visitorEmail: string;
+  phone: string;
+
+  @Column({ nullable: true })
+  email: string;
 
   @Column({ type: 'timestamp' })
   scheduledDate: Date;
@@ -37,15 +40,15 @@ export class Invitation {
   @Column({ nullable: true })
   qrCode: string;
 
+  @Column({ type: 'text', nullable: true })
+  qrSignature: string;
+
   @Column({
     type: 'enum',
     enum: InvitationStatus,
     default: InvitationStatus.PENDING,
   })
   status: InvitationStatus;
-
-  @Column()
-  visitPurpose: string;
 
   @Column({ nullable: true })
   notes: string;

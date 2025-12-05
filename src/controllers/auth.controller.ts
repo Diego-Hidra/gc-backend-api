@@ -8,7 +8,11 @@ export class AuthController {
 
   @Post('auth') 
   @UsePipes(new ValidationPipe({ whitelist: true }))
-  async login(@Body() loginDto: LoginDto): Promise<{ access_token: string }> {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto): Promise<{ success: boolean; data: { access_token: string } }> {
+    const result = await this.authService.login(loginDto);
+    return {
+      success: true,
+      data: result
+    };
   }
 }

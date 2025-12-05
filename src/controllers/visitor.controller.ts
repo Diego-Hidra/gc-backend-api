@@ -1,10 +1,12 @@
-import { Controller, Post, Patch, Body, UsePipes, ValidationPipe, HttpStatus, HttpCode, Param, Get } from "@nestjs/common";
+import { Controller, Post, Patch, Body, UsePipes, ValidationPipe, HttpStatus, HttpCode, Param, Get, UseGuards } from "@nestjs/common";
 import { VisitorService } from "src/services/visitor.service";
 import { CreateVisitorDto } from "src/dto/create-visitor.dto";
 import { UpdateVisitorStatusDto } from "src/dto/update-visitor-status.dto";
 import { Visitor } from "src/entities/visitor.entity";
+import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 
 @Controller('api/visitors')
+@UseGuards(JwtAuthGuard)
 export class VisitorController {
     constructor(private readonly visitorService: VisitorService) {}
 

@@ -7,31 +7,34 @@ export class FrequentVisitor {
   id: string;
 
   @Column()
-  name: string;
+  firstName: string;
+
+  @Column()
+  lastName: string;
 
   @Column()
   rut: string;
 
-  @Column()
-  phone: string;
+  @Column({ nullable: true })
+  phone?: string;
 
   @Column({ nullable: true })
-  email: string;
-
-  @Column()
-  relationship: string;
+  email?: string;
 
   @Column({ default: 0 })
   visitCount: number;
 
   @Column({ type: 'timestamp', nullable: true })
-  lastVisit: Date;
+  lastVisit?: Date;
 
   @Column({ nullable: true })
-  notes: string;
+  notes?: string;
+
+  @Column({ default: false })
+  hasVehicle: boolean;
 
   @Column({ type: 'jsonb', nullable: true })
-  vehicleInfo: {
+  vehicleInfo?: {
     licensePlate: string;
     brand: string;
     model: string;

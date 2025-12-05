@@ -1,10 +1,12 @@
-import { Controller, Patch, Body, UsePipes, ValidationPipe, HttpStatus, HttpCode, Param, Delete, Get, Post } from "@nestjs/common";
+import { Controller, Patch, Body, UsePipes, ValidationPipe, HttpStatus, HttpCode, Param, Delete, Get, Post, UseGuards } from "@nestjs/common";
 import { InvitationService } from "src/services/invitation.service";
 import { UpdateInvitationStatusDto } from "src/dto/update-invitation-status.dto";
 import { CreateInvitationDto } from "src/dto/create-invitation.dto";
 import { Invitation } from "src/entities/invitation.entity";
+import { JwtAuthGuard } from "src/auth/jwt-auth.guard";
 
 @Controller('api/invitations')
+@UseGuards(JwtAuthGuard)
 export class InvitationController {
     constructor(private readonly invitationService: InvitationService) {}
 
@@ -12,6 +14,13 @@ export class InvitationController {
     @HttpCode(HttpStatus.OK)
     async findAllInvitations(): Promise<{ success: boolean; data: Invitation[] }> {
         const data = await this.invitationService.findAll();
+        return { success: true, data };
+    }
+
+    @Get('resident/:residentId')
+    @HttpCode(HttpStatus.OK)
+    async findInvitationsByResident(@Param('residentId') residentId: string): Promise<{ success: boolean; data: Invitation[] }> {
+        const data = await this.invitationService.findByResidentId(residentId);
         return { success: true, data };
     }
 
