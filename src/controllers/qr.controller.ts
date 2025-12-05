@@ -61,6 +61,98 @@ export class QrController{
           console.error('Error al generar QR:', error);
           res.status(500).send('Error interno al generar el código QR.');
         }
-    } 
+    }
+
+    @Post('validate-qr')
+    async validateQr(@Req() req: Request, @Res() res: Response) {
+        try {
+            const { qrData } = req.body;
+
+            if (!qrData) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Datos del QR no proporcionados'
+                });
+            }
+
+            console.log('\n🔍 Validando QR escaneado...');
+            
+            // Parsear datos del QR
+            let parsedData;
+            try {
+                parsedData = JSON.parse(qrData);
+            } catch (parseError) {
+                console.error('❌ Error al parsear QR:', parseError);
+                return res.status(400).json({
+                    success: false,
+                    message: 'Formato de QR inválido'
+                });
+            }
+
+            const { id, exp, sig } = parsedData;
+
+            if (!id || !exp || !sig) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'QR incompleto o corrupto'
+                });
+            }
+
+            // Verificar expiración
+            const currentTime = Date.now();
+            if (currentTime > exp) {
+                const expiredMinutes = Math.floor((currentTime - exp) / 60000);
+                console.log(`❌ QR EXPIRADO hace ${expiredMinutes} minuto(s)`);
+                return res.status(401).json({
+                    success: false,
+                    message: 'QR expirado',
+                    expiredMinutesAgo: expiredMinutes
+                });
+            }
+
+            // Verificar firma HMAC
+            const QR_SECRET = process.env.QR_SECRET || '';
+            
+            // Buscar residente en base de datos para obtener user_type
+            // Por ahora asumimos que es 'resident'
+            const user_type = 'resident';
+            const dataToHash = `${id}:${user_type}:${exp}`;
+            
+            const expectedSignature = crypto
+                .createHmac('sha256', QR_SECRET)
+                .update(dataToHash)
+                .digest('hex');
+
+            if (sig !== expectedSignature) {
+                console.log('❌ Firma HMAC inválida - QR adulterado');
+                return res.status(401).json({
+                    success: false,
+                    message: 'QR inválido o adulterado'
+                });
+            }
+
+            // QR válido
+            const remainingMinutes = Math.floor((exp - currentTime) / 60000);
+            console.log(`✅ QR VÁLIDO - Residente ID: ${id}, Expira en ${remainingMinutes} minuto(s)`);
+
+            return res.status(200).json({
+                success: true,
+                message: 'QR válido - Acceso autorizado',
+                data: {
+                    residentId: id,
+                    validatedAt: new Date().toISOString(),
+                    expiresInMinutes: remainingMinutes,
+                    expiresAt: new Date(exp).toISOString()
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ Error al validar QR:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Error interno al validar el QR'
+            });
+        }
+    }
 
 }

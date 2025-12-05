@@ -1,0 +1,1298 @@
+{
+	"info": {
+		"_postman_id": "gc-complete-api-2024",
+		"name": "Guardian Comunitario API - Complete",
+		"description": "Colección completa de 46 endpoints de la API Guardian Comunitario con autenticación Bearer token y numeración organizada.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{access_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "01. Auth",
+			"item": [
+				{
+					"name": "01.1 Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"access_token\", jsonData.access_token);",
+									"    console.log(\"Token guardado:\", jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@guardiancomunitario.cl\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth"]
+						},
+						"description": "Autenticación de usuario. Retorna access_token que se guarda automáticamente."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "02. Residents",
+			"item": [
+				{
+					"name": "02.1 Crear Residente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"resident_id\", jsonData.data.id);",
+									"    console.log(\"Residente creado con ID:\", jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Pérez\",\n  \"rut\": \"18.765.432-1\",\n  \"email\": \"juan.perez@test.com\",\n  \"password\": \"Test1234\",\n  \"phone\": \"+56912345678\",\n  \"block\": \"D\",\n  \"lotNumber\": \"401\",\n  \"role\": \"resident\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/resident/add",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "add"]
+						},
+						"description": "Crear un nuevo residente con todos sus datos personales."
+					},
+					"response": []
+				},
+				{
+					"name": "02.2 Listar Residentes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/resident/all",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "all"]
+						},
+						"description": "Obtener lista de todos los residentes registrados."
+					},
+					"response": []
+				},
+				{
+					"name": "02.3 Obtener Residente por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/resident/{{resident_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "{{resident_id}}"]
+						},
+						"description": "Obtener información detallada de un residente específico."
+					},
+					"response": []
+				},
+				{
+					"name": "02.4 Actualizar Residente",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Juan Carlos\",\n  \"phone\": \"+56987654321\",\n  \"block\": \"D\",\n  \"lotNumber\": \"402\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/resident/{{resident_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "{{resident_id}}"]
+						},
+						"description": "Actualizar información de un residente existente."
+					},
+					"response": []
+				},
+				{
+					"name": "02.5 Eliminar Residente",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/resident/{{resident_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "{{resident_id}}"]
+						},
+						"description": "Eliminar (desactivar) un residente del sistema."
+					},
+					"response": []
+				},
+				{
+					"name": "02.6 Buscar Residente por RUT",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.id) {",
+									"        pm.environment.set(\"resident_id\", jsonData.id);",
+									"        console.log(\"Residente encontrado con ID:\", jsonData.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/resident/search?rut=12.345.678-9",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "search"],
+							"query": [
+								{
+									"key": "rut",
+									"value": "12.345.678-9"
+								}
+							]
+						},
+						"description": "Buscar un residente específico por su RUT."
+					},
+					"response": []
+				},
+				{
+					"name": "02.7 Buscar Residente por Email",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.id) {",
+									"        pm.environment.set(\"resident_id\", jsonData.id);",
+									"        console.log(\"Residente encontrado con ID:\", jsonData.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/resident/search?email=juan.perez@email.cl",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "search"],
+							"query": [
+								{
+									"key": "email",
+									"value": "juan.perez@email.cl"
+								}
+							]
+						},
+						"description": "Buscar un residente por su dirección de email."
+					},
+					"response": []
+				},
+				{
+					"name": "02.8 Obtener Visitantes del Residente",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/resident/{{resident_id}}/visitors",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "{{resident_id}}", "visitors"]
+						},
+						"description": "Obtener todos los visitantes asociados a un residente."
+					},
+					"response": []
+				},
+				{
+					"name": "02.9 Obtener Invitaciones del Residente",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/resident/{{resident_id}}/invitations",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "{{resident_id}}", "invitations"]
+						},
+						"description": "Obtener todas las invitaciones creadas por un residente."
+					},
+					"response": []
+				},
+				{
+					"name": "02.10 Obtener Vehículos del Residente",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/resident/{{resident_id}}/vehicles",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "{{resident_id}}", "vehicles"]
+						},
+						"description": "Obtener todos los vehículos registrados por un residente."
+					},
+					"response": []
+				},
+				{
+					"name": "02.11 Cambiar Contraseña",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"admin123\",\n  \"newPassword\": \"NewPass1234\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/resident/{{resident_id}}/change-password",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "{{resident_id}}", "change-password"]
+						},
+						"description": "Cambiar la contraseña de un residente."
+					},
+					"response": []
+				},
+				{
+					"name": "02.12 Verificar Disponibilidad de Email",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/resident/check-email?email=test@email.cl",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "check-email"],
+							"query": [
+								{
+									"key": "email",
+									"value": "test@email.cl"
+								}
+							]
+						},
+						"description": "Verificar si un email ya está registrado."
+					},
+					"response": []
+				},
+				{
+					"name": "02.13 Verificar Disponibilidad de RUT",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/resident/check-rut?rut=12.345.678-9",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "check-rut"],
+							"query": [
+								{
+									"key": "rut",
+									"value": "12.345.678-9"
+								}
+							]
+						},
+						"description": "Verificar si un RUT ya está registrado."
+					},
+					"response": []
+				},
+				{
+					"name": "02.14 Obtener Estadísticas del Residente",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/resident/{{resident_id}}/stats",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "{{resident_id}}", "stats"]
+						},
+						"description": "Obtener estadísticas generales de un residente (visitantes, invitaciones, vehículos)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "03. Visitors",
+			"item": [
+				{
+					"name": "03.1 Crear Visitante",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"visitor_id\", jsonData.data.id);",
+									"    console.log(\"Visitante creado con ID:\", jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"María\",\n  \"lastName\": \"Silva\",\n  \"rut\": \"98.765.432-1\",\n  \"phone\": \"+56911223344\",\n  \"email\": \"maria.silva@example.com\",\n  \"visitPurpose\": \"Visita familiar\",\n  \"hasVehicle\": true,\n  \"vehicleInfo\": {\n    \"licensePlate\": \"WXYZ-34\",\n    \"brand\": \"Toyota\",\n    \"model\": \"Yaris\",\n    \"color\": \"Blanco\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/visitors/{{resident_id}}/add",
+							"host": ["{{base_url}}"],
+							"path": ["api", "visitors", "{{resident_id}}", "add"]
+						},
+						"description": "Crear un nuevo visitante asociado a un residente."
+					},
+					"response": []
+				},
+				{
+					"name": "03.2 Listar Todos los Visitantes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/visitors/all",
+							"host": ["{{base_url}}"],
+							"path": ["api", "visitors", "all"]
+						},
+						"description": "Obtener lista de todos los visitantes registrados en el sistema."
+					},
+					"response": []
+				},
+				{
+					"name": "03.3 Actualizar Estado del Visitante",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"APPROVED\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/visitors/{{visitor_id}}/status",
+							"host": ["{{base_url}}"],
+							"path": ["api", "visitors", "{{visitor_id}}", "status"]
+						},
+						"description": "Actualizar el estado de un visitante (active/inactive)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "04. Invitations",
+			"item": [
+				{
+					"name": "04.1 Crear Invitación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"invitation_id\", jsonData.data.id);",
+									"    console.log(\"Invitación creada con ID:\", jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"visitorName\": \"Carlos Muñoz\",\n  \"visitorRut\": \"16.543.210-9\",\n  \"visitorPhone\": \"+56922334455\",\n  \"visitorEmail\": \"carlos.munoz@example.com\",\n  \"scheduledDate\": \"2025-01-25T14:00:00Z\",\n  \"expirationDate\": \"2025-01-25T18:00:00Z\",\n  \"visitPurpose\": \"Visita familiar\",\n  \"notes\": \"Traerá dos niños\",\n  \"hasVehicle\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invitations/{{resident_id}}/add",
+							"host": ["{{base_url}}"],
+							"path": ["api", "invitations", "{{resident_id}}", "add"]
+						},
+						"description": "Crear una nueva invitación para un visitante proporcionando todos los datos manualmente."
+					},
+					"response": []
+				},
+				{
+					"name": "04.1b Crear Invitación con Visitante Frecuente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"invitation_id\", jsonData.data.id);",
+									"    console.log(\"Invitación creada con ID:\", jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"frequentVisitorId\": \"{{frequent_visitor_id}}\",\n  \"scheduledDate\": \"2025-01-25T14:00:00Z\",\n  \"expirationDate\": \"2025-01-25T18:00:00Z\",\n  \"visitPurpose\": \"Visita familiar\",\n  \"notes\": \"Datos autocompletados desde contacto guardado\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invitations/{{resident_id}}/add",
+							"host": ["{{base_url}}"],
+							"path": ["api", "invitations", "{{resident_id}}", "add"]
+						},
+						"description": "Crear invitación usando un visitante frecuente (contacto guardado). Los datos del visitante se autocompletan."
+					},
+					"response": []
+				},
+				{
+					"name": "04.1c Crear Invitación con Contacto y Override",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"invitation_id\", jsonData.data.id);",
+									"    console.log(\"Invitación creada con ID:\", jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"frequentVisitorId\": \"{{frequent_visitor_id}}\",\n  \"visitorPhone\": \"+56999888777\",\n  \"scheduledDate\": \"2025-01-25T14:00:00Z\",\n  \"visitPurpose\": \"Visita urgente\",\n  \"notes\": \"Usa contacto pero cambia el teléfono\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invitations/{{resident_id}}/add",
+							"host": ["{{base_url}}"],
+							"path": ["api", "invitations", "{{resident_id}}", "add"]
+						},
+						"description": "Crear invitación usando contacto guardado pero sobrescribiendo algunos datos (ej: teléfono diferente)."
+					},
+					"response": []
+				},
+				{
+					"name": "04.2 Listar Todas las Invitaciones",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/invitations/all",
+							"host": ["{{base_url}}"],
+							"path": ["api", "invitations", "all"]
+						},
+						"description": "Obtener lista de todas las invitaciones del sistema."
+					},
+					"response": []
+				},
+				{
+					"name": "04.3 Obtener Invitación por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/invitations/{{invitation_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "invitations", "{{invitation_id}}"]
+						},
+						"description": "Obtener información detallada de una invitación específica."
+					},
+					"response": []
+				},
+				{
+					"name": "04.4 Aprobar Invitación",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.qrCode) {",
+									"        pm.environment.set(\"qr_code\", jsonData.data.qrCode);",
+									"        console.log(\"Código QR guardado:\", jsonData.data.qrCode);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/invitations/{{invitation_id}}/approve",
+							"host": ["{{base_url}}"],
+							"path": ["api", "invitations", "{{invitation_id}}", "approve"]
+						},
+						"description": "Aprobar una invitación pendiente y generar código QR."
+					},
+					"response": []
+				},
+				{
+					"name": "04.5 Rechazar Invitación",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Horario no disponible\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invitations/{{invitation_id}}/reject",
+							"host": ["{{base_url}}"],
+							"path": ["api", "invitations", "{{invitation_id}}", "reject"]
+						},
+						"description": "Rechazar una invitación pendiente con motivo opcional."
+					},
+					"response": []
+				},
+				{
+					"name": "04.6 Cancelar Invitación",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"El visitante no podrá asistir\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/invitations/{{invitation_id}}/cancel",
+							"host": ["{{base_url}}"],
+							"path": ["api", "invitations", "{{invitation_id}}", "cancel"]
+						},
+						"description": "Cancelar una invitación aprobada."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "05. Frequent Visitors",
+			"item": [
+				{
+					"name": "05.1 Crear Visitante Frecuente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"frequent_visitor_id\", jsonData.data.id);",
+									"    console.log(\"Visitante frecuente creado con ID:\", jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Carlos Muñoz\",\n  \"rut\": \"11.222.333-4\",\n  \"phone\": \"+56922334455\",\n  \"email\": \"carlos.munoz@example.com\",\n  \"relationship\": \"Familiar\",\n  \"notes\": \"Visita todos los fines de semana\",\n  \"vehicleInfo\": {\n    \"licensePlate\": \"ABCD-12\",\n    \"brand\": \"Chevrolet\",\n    \"model\": \"Spark\",\n    \"color\": \"Azul\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/resident/{{resident_id}}/frequent-visitors",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "{{resident_id}}", "frequent-visitors"]
+						},
+						"description": "Agregar un visitante frecuente a un residente."
+					},
+					"response": []
+				},
+				{
+					"name": "05.2 Listar Visitantes Frecuentes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/resident/{{resident_id}}/frequent-visitors",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "{{resident_id}}", "frequent-visitors"]
+						},
+						"description": "Obtener todos los visitantes frecuentes de un residente."
+					},
+					"response": []
+				},
+				{
+					"name": "05.3 Crear Invitación desde Visitante Frecuente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"invitation_id\", jsonData.data.id);",
+									"    console.log(\"Invitación creada con ID:\", jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"scheduledDate\": \"2025-01-22T10:00:00Z\",\n  \"expirationDate\": \"2025-01-22T14:00:00Z\",\n  \"visitPurpose\": \"Visita regular\",\n  \"notes\": \"Invitaci\u00f3n desde visitante frecuente\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/frequent-visitors/{{frequent_visitor_id}}/create-invitation",
+							"host": ["{{base_url}}"],
+							"path": ["api", "frequent-visitors", "{{frequent_visitor_id}}", "create-invitation"]
+						},
+						"description": "Forma alternativa de crear invitación desde visitante frecuente. Nota: Recomendado usar 04.1b que usa frequentVisitorId en el body."
+					},
+					"response": []
+				},
+				{
+					"name": "05.4 Eliminar Visitante Frecuente",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/frequent-visitors/{{frequent_visitor_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "frequent-visitors", "{{frequent_visitor_id}}"]
+						},
+						"description": "Eliminar un visitante frecuente del sistema."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "06. Vehicles",
+			"item": [
+				{
+					"name": "06.1 Registrar Vehículo",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"vehicle_id\", jsonData.data.id);",
+									"    console.log(\"Vehículo registrado con ID:\", jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"licensePlate\": \"ABCD-12\",\n  \"brand\": \"Toyota\",\n  \"model\": \"Corolla\",\n  \"year\": 2023,\n  \"color\": \"Blanco\",\n  \"type\": \"CAR\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/{{resident_id}}/cars/add",
+							"host": ["{{base_url}}"],
+							"path": ["api", "{{resident_id}}", "cars", "add"]
+						},
+						"description": "Registrar un nuevo vehículo para un residente."
+					},
+					"response": []
+				},
+				{
+					"name": "06.2 Listar Todos los Vehículos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/cars/all",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cars", "all"]
+						},
+						"description": "Obtener lista de todos los vehículos registrados."
+					},
+					"response": []
+				},
+				{
+					"name": "06.3 Obtener Vehículo por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/cars/{{vehicle_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cars", "{{vehicle_id}}"]
+						},
+						"description": "Obtener información detallada de un vehículo específico."
+					},
+					"response": []
+				},
+				{
+					"name": "06.4 Actualizar Vehículo",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"color\": \"Gris\",\n  \"year\": 2021\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cars/{{vehicle_id}}/update",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cars", "{{vehicle_id}}", "update"]
+						},
+						"description": "Actualizar información de un vehículo existente."
+					},
+					"response": []
+				},
+				{
+					"name": "06.5 Eliminar Vehículo",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Vehículo vendido\",\n  \"notes\": \"Compró uno nuevo\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/cars/car/{{vehicle_id}}/delete",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cars", "car", "{{vehicle_id}}", "delete"]
+						},
+						"description": "Eliminar (desactivar) un vehículo del sistema con razón y notas opcionales."
+					},
+					"response": []
+				},
+				{
+					"name": "06.6 Buscar Vehículo por Patente",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/cars/search?licensePlate=ABCD-12",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cars", "search"],
+							"query": [
+								{
+									"key": "licensePlate",
+									"value": "ABCD-12"
+								}
+							]
+						},
+						"description": "Buscar un vehículo por su patente."
+					},
+					"response": []
+				},
+				{
+					"name": "06.7 Verificar Patente Duplicada",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/cars/check-duplicate?licensePlate=ABCD-12",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cars", "check-duplicate"],
+							"query": [
+								{
+									"key": "licensePlate",
+									"value": "ABCD-12"
+								}
+							]
+						},
+						"description": "Verificar si una patente ya está registrada en el sistema."
+					},
+					"response": []
+				},
+				{
+					"name": "06.8 Obtener Estadísticas de Vehículos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/residents/{{resident_id}}/vehicles/stats",
+							"host": ["{{base_url}}"],
+							"path": ["api", "residents", "{{resident_id}}", "vehicles", "stats"]
+						},
+						"description": "Obtener estadísticas de vehículos de un residente."
+					},
+					"response": []
+				},
+				{
+					"name": "06.9 Reactivar Vehículo",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/cars/{{vehicle_id}}/activate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "cars", "{{vehicle_id}}", "activate"]
+						},
+						"description": "Reactivar un vehículo previamente eliminado."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "07. Logs",
+			"item": [
+				{
+					"name": "07.1 Crear Log",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"log_id\", jsonData.data.id);",
+									"    console.log(\"Log creado con ID:\", jsonData.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"visitor\",\n  \"action\": \"check_in\",\n  \"description\": \"Visitante ingresó al condominio\",\n  \"userId\": \"{{resident_id}}\",\n  \"entityType\": \"visitor\",\n  \"entityId\": \"{{visitor_id}}\",\n  \"metadata\": {\n    \"gate\": \"Principal\",\n    \"guard\": \"Juan Gutiérrez\"\n  },\n  \"severity\": \"info\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/logs/create",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs", "create"]
+						},
+						"description": "Crear un nuevo registro de log en el sistema."
+					},
+					"response": []
+				},
+				{
+					"name": "07.2 Obtener Logs del Día",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/logs/per_day/VISITOR_ENTRY",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs", "per_day", "VISITOR_ENTRY"]
+						},
+						"description": "Obtener todos los logs del día actual de un tipo específico."
+					},
+					"response": []
+				},
+				{
+					"name": "07.3 Obtener Logs por Tipo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/logs/all/VISITOR_ENTRY",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs", "all", "VISITOR_ENTRY"]
+						},
+						"description": "Obtener todos los logs de un tipo específico."
+					},
+					"response": []
+				},
+				{
+					"name": "07.4 Obtener Todos los Logs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/logs/all",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs", "all"]
+						},
+						"description": "Obtener todos los logs del sistema."
+					},
+					"response": []
+				},
+				{
+					"name": "07.5 Obtener Log por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/logs/{{log_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs", "{{log_id}}"]
+						},
+						"description": "Obtener información detallada de un log específico."
+					},
+					"response": []
+				},
+				{
+					"name": "07.6 Obtener Logs por Usuario",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/logs/user/{{resident_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs", "user", "{{resident_id}}"]
+						},
+						"description": "Obtener todos los logs asociados a un usuario específico."
+					},
+					"response": []
+				},
+				{
+					"name": "07.7 Obtener Logs por Entidad",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/logs/entity/visitor/{{visitor_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs", "entity", "visitor", "{{visitor_id}}"]
+						},
+						"description": "Obtener todos los logs relacionados con una entidad específica."
+					},
+					"response": []
+				},
+				{
+					"name": "07.8 Obtener Estadísticas de Logs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/logs/stats",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs", "stats"]
+						},
+						"description": "Obtener estadísticas generales de logs del sistema."
+					},
+					"response": []
+				},
+				{
+					"name": "07.9 Limpiar Logs Antiguos",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"daysToKeep\": 90\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/logs/clean",
+							"host": ["{{base_url}}"],
+							"path": ["api", "logs", "clean"]
+						},
+						"description": "Limpiar logs antiguos del sistema según días especificados."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "08. QR Codes",
+			"item": [
+				{
+					"name": "08.1 Validar Código QR",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"qrCode\": \"{{qr_code}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/qr/validate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "qr", "validate"]
+						},
+						"description": "Validar un código QR de invitación."
+					},
+					"response": []
+				},
+				{
+					"name": "08.2 Check-in con QR",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(\"Check-in exitoso:\", jsonData.data);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"qrCode\": \"{{qr_code}}\",\n  \"guardId\": \"{{resident_id}}\",\n  \"gateLocation\": \"Puerta Principal\",\n  \"additionalData\": {\n    \"temperature\": \"36.5\",\n    \"notes\": \"Ingreso normal\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/qr/check-in",
+							"host": ["{{base_url}}"],
+							"path": ["api", "qr", "check-in"]
+						},
+						"description": "Registrar entrada de visitante usando código QR."
+					},
+					"response": []
+				},
+				{
+					"name": "08.3 Check-out con QR",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    console.log(\"Check-out exitoso:\", jsonData.data);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"qrCode\": \"{{qr_code}}\",\n  \"guardId\": \"{{resident_id}}\",\n  \"gateLocation\": \"Puerta Principal\",\n  \"additionalData\": {\n    \"notes\": \"Salida normal\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/qr/check-out",
+							"host": ["{{base_url}}"],
+							"path": ["api", "qr", "check-out"]
+						},
+						"description": "Registrar salida de visitante usando código QR."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "resident_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "visitor_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "invitation_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "frequent_visitor_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "vehicle_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "log_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "qr_code",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

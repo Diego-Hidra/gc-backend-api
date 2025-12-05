@@ -45,8 +45,16 @@ export class ResidentController {
     @HttpCode(HttpStatus.OK)
     @Roles('ADMIN')
     async updateResident(@Param('id') id: string, @Body() updateDto: UpdateResidentDTO) {
-
         return this.residentService.updateResident(id, updateDto);
+    }
+
+    @Patch(':id/profile')
+    @HttpCode(HttpStatus.OK)
+    async updateOwnProfile(@Param('id') id: string, @Body() updateDto: UpdateResidentDTO) {
+        // Permitir que cualquier usuario autenticado actualice su propio perfil
+        // TODO: Verificar que el ID del token coincida con el ID del parámetro para mayor seguridad
+        const data = await this.residentService.updateResident(id, updateDto);
+        return { success: true, data };
     }
 
 

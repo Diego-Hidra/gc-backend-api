@@ -30,13 +30,15 @@ export class ResidentService {
 
         const newResident = this.residentRepository.create({
             rut: dto.rut,
-            name: dto.name,
-            lastname: dto.lastname,
+            firstName: dto.name,
+            lastName: dto.lastname,
             email: dto.email,
-            phone_number: dto.phone_number,
+            phone: dto.phone_number,
             password: hashedPassword, 
             floor: dto.floor,
-            apartament: dto.apartament
+            apartment: dto.apartament,
+            block: dto.block || 'A',
+            lotNumber: dto.lotNumber || '000'
         });
 
         return this.residentRepository.save(newResident);
@@ -46,7 +48,7 @@ export class ResidentService {
 
         return this.residentRepository.find({
 
-            select: ['id', 'rut', 'name', 'lastname', 'phone_number', 'floor', 'apartament'],
+            select: ['id', 'rut', 'firstName', 'lastName', 'phone', 'floor', 'apartment', 'block', 'lotNumber'],
         });
     }
 
@@ -55,7 +57,7 @@ export class ResidentService {
         const resident = await this.residentRepository.findOne({
             where: {id},
 
-            select: ['id', 'rut', 'name', 'lastname', 'phone_number', 'floor', 'apartament'],
+            select: ['id', 'rut', 'firstName', 'lastName', 'phone', 'floor', 'apartment', 'block', 'lotNumber'],
         });
 
         if (!resident){
@@ -74,7 +76,21 @@ export class ResidentService {
         const salt = await bcrypt.genSalt();
         passwordHash = await bcrypt.hash(updateDto.password, salt);
     }
-    const updateResult = await this.residentRepository.update(id, {...updateDto, ...(passwordHash && { password: passwordHash }),});
+    
+    // Mapear campos del DTO a los nombres de la entidad
+    const updateData: any = {};
+    if (updateDto.name) updateData.firstName = updateDto.name;
+    if (updateDto.lastname) updateData.lastName = updateDto.lastname;
+    if (updateDto.phone_number) updateData.phone = updateDto.phone_number;
+    if (updateDto.floor) updateData.floor = updateDto.floor;
+    if (updateDto.apartament) updateData.apartment = updateDto.apartament;
+    if (updateDto.block) updateData.block = updateDto.block;
+    if (updateDto.lotNumber) updateData.lotNumber = updateDto.lotNumber;
+    if (updateDto.email) updateData.email = updateDto.email;
+    if (updateDto.rut) updateData.rut = updateDto.rut;
+    if (passwordHash) updateData.password = passwordHash;
+    
+    const updateResult = await this.residentRepository.update(id, updateData);
 
     if (updateResult.affected === 0) {
         throw new NotFoundException(`Residente con ID "${id}" no encontrado.`);
