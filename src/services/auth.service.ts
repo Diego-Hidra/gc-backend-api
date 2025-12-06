@@ -80,4 +80,26 @@ export class AuthService {
         return { access_token };
     };
 
+    async loginAdmin(loginDto: LoginDto): Promise<{ access_token: string }> {
+    const admin = await this.adminRepository.findOne({ where: { email: loginDto.email } });
+
+    if (!admin) {
+        throw new UnauthorizedException('Credenciales inválidas. Solo administradores pueden acceder.');
+    }
+
+    const passwordMatch = await bcrypt.compare(loginDto.password, admin.password);
+    if (!passwordMatch) {
+        throw new UnauthorizedException('Credenciales inválidas.');
+    }
+
+    const payload = {
+        sub: admin.id,
+        email: admin.email,
+        user_type: 'admin',
+        name: admin.firstName + ' ' + admin.lastName,
+    };
+
+    return { access_token: this.jwtService.sign(payload) };
+    };
+
 }
