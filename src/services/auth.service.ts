@@ -102,4 +102,26 @@ export class AuthService {
     return { access_token: this.jwtService.sign(payload) };
     };
 
+    async loginGuard(loginDto: LoginDto): Promise<{ access_token: string }> {
+    const guard = await this.guardRepository.findOne({ where: { email: loginDto.email } });
+
+    if (!guard) {
+        throw new UnauthorizedException('Credenciales inválidas. Solo guardias pueden acceder.');
+    }
+
+    const passwordMatch = await bcrypt.compare(loginDto.password, guard.password);
+    if (!passwordMatch) {
+        throw new UnauthorizedException('Credenciales inválidas.');
+    }
+
+    const payload = {
+        sub: guard.id,
+        email: guard.email,
+        user_type: 'guard',
+        name: guard.firstName + ' ' + guard.lastName,
+    };
+
+    return { access_token: this.jwtService.sign(payload) };
+    };
+
 }
