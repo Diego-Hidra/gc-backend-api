@@ -1,6 +1,6 @@
 import { Injectable, ConflictException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, ILike} from 'typeorm';
 import { Resident } from "src/entities/resident.entity";
 import { CreateResidentDTO } from "src/dto/create-resident.dto";
 import * as bcrypt from 'bcrypt';
@@ -44,13 +44,71 @@ export class ResidentService {
         return this.residentRepository.save(newResident);
     }
 
-    async findAllResidents(): Promise<Resident[]> {
+    async findAllResidents(
+    page: number = 1,
+    limit: number = 10,
+    search: string = '',
+    floor: string = '',
+    apartament: string = '',
+  ) {
+    const skip = (page - 1) * limit;
 
-        return this.residentRepository.find({
+    // --- CORRECCIÓN DE FILTROS ---
 
-            select: ['id', 'rut', 'firstName', 'lastName', 'phone', 'floor', 'apartment', 'block', 'lotNumber'],
-        });
+    // 1. Definimos los filtros base (Filtros estrictos AND)
+    const baseFilters: any = {};
+
+    if (floor) {
+      baseFilters.floor = floor;
     }
+
+    if (apartament) {
+      baseFilters.apartament = apartament;
+    }
+
+    // 2. Construimos la condición final
+    let whereCondition: any;
+
+    if (search) {
+      // Si hay búsqueda, aplicamos (Nombre O Rut) Y (Filtros Base)
+      // TypeORM requiere repetir los filtros base en cada objeto del array OR
+      const searchCondition = ILike(`%${search}%`);
+      whereCondition = [
+        { ...baseFilters, name: searchCondition }, // (Filtros) AND Nombre
+        { ...baseFilters, rut: searchCondition }, // (Filtros) AND Rut
+        { ...baseFilters, lastname: searchCondition }, // Opcional: Buscar por apellido también
+      ];
+    } else {
+      // Si no hay búsqueda, solo usamos los filtros base
+      whereCondition = baseFilters;
+    }
+
+    const [data, total] = await this.residentRepository.findAndCount({
+      select: [
+        'id',
+        'rut',
+        'firstName',
+        'lastName',
+        'phone',
+        'floor',
+        'apartment',
+        'profilePicture',
+      ],
+      where: whereCondition,
+      take: limit,
+      skip: skip,
+      order: { id: 'DESC' },
+    });
+
+    return {
+      data: data,
+      meta: {
+        total: total,
+        page: page,
+        last_page: Math.ceil(total / limit),
+      },
+    };
+  }
 
     async findResidentsByID(id: string): Promise<Resident> {
 

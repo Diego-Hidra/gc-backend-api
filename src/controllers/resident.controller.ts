@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UsePipes, ValidationPipe, UseGuards, HttpStatus, HttpCode, Get, Param, Patch } from "@nestjs/common";
+import { Controller, Post, Body, UsePipes, ValidationPipe, UseGuards, HttpStatus, HttpCode, Get, Param, Patch, Query } from "@nestjs/common";
 import { ResidentService } from "src/services/resident.service";
 import { CreateResidentDTO } from "src/dto/create-resident.dto";
 import { Resident } from "src/entities/resident.entity";
@@ -26,12 +26,28 @@ export class ResidentController {
         return this.residentService.createResident(createResidentDTO)
     }
 
-    @Get('all')
-    @HttpCode(HttpStatus.OK)
-    @Roles('ADMIN')
-    async findAll(): Promise<Resident[]>{
-        return this.residentService.findAllResidents();
-    }
+  @Get('all') 
+  @HttpCode(HttpStatus.OK)
+  @Roles('ADMIN')
+  async findAll(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('search') search: string = '',
+    @Query('floor') floor: string = '',
+    @Query('apartament') apartament: string = '',
+  ) {
+    
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 10;
+
+    return this.residentService.findAllResidents(
+      pageNumber,
+      limitNumber,
+      search,
+      floor,
+      apartament,
+    );
+  }
 
     @Get(':id')
     @HttpCode(HttpStatus.OK)
