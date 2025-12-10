@@ -22,9 +22,16 @@ test:
   services:
     - docker:dind
   script:
-    - docker-compose -f docker-compose.yml up -d
-    - docker-compose -f docker-compose.yml run --rm api npm run test:integration
-    - docker-compose -f docker-compose.yml down
+
+    - echo "Setting up test environment variables..."
+
+    - echo "PG_USER=$PG_USER" > .env.test
+    - echo "PG_PASS=$PG_PASS" >> .env.test
+    - echo "PG_DB=$PG_DB" >> .env.test
+
+    - docker-compose --env-file .env.test -f docker-compose.yml up -d
+    - docker-compose --env-file .env.test -f docker-compose.yml run --rm api npm run test:integration
+    - docker-compose --env-file .env.test -f docker-compose.yml down
 
 deploy:
   stage: deploy
