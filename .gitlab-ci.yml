@@ -21,6 +21,14 @@ test:
   image: docker:latest
   services:
     - docker:dind
+
+  variables: 
+    PG_USER: testuser_ci
+    PG_PASS: testpass_ci
+    PG_DB: testdb_ci
+    JWT_SECRET: testing-secret
+
+
   script:
 
     - echo "Setting up test environment variables..."
