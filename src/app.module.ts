@@ -11,6 +11,7 @@ import { LogModule } from './modules/log.module';
 import { EntryLogModule } from './modules/entry-log.module';
 
 import { ConfigModule } from '@nestjs/config';
+import { EmbeddingModule } from './modules/embedding.module';
 
 @Module({
   imports: [
@@ -37,7 +38,8 @@ import { ConfigModule } from '@nestjs/config';
       synchronize: false
     }),
     AuthModule, // Debe ir primero para exportar JwtStrategy globalmente
-    ResidentModule, 
+    ResidentModule,
+    EmbeddingModule, 
     QrModule, 
     VisitorModule, 
     InvitationModule, 
