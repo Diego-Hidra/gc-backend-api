@@ -38,9 +38,3 @@ Thumbs.db
 doc
 *.md
 !README.md
-
-# Test files
-test
-*.spec.ts
-*.e2e-spec.ts
-jest-e2e.json
