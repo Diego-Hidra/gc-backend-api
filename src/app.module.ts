@@ -8,6 +8,7 @@ import { InvitationModule } from './modules/invitation.module';
 import { VehicleModule } from './modules/vehicle.module';
 import { FrequentVisitorModule } from './modules/frequent-visitor.module';
 import { LogModule } from './modules/log.module';
+import { EntryLogModule } from './modules/entry-log.module';
 
 import { ConfigModule } from '@nestjs/config';
 
@@ -42,7 +43,8 @@ import { ConfigModule } from '@nestjs/config';
     InvitationModule, 
     VehicleModule, 
     FrequentVisitorModule, 
-    LogModule],
+    LogModule,
+    EntryLogModule],
   controllers: [],
   providers: [],
 })

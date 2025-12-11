@@ -1,8 +1,9 @@
-import { Controller, Req, UseGuards, Res, Post } from "@nestjs/common";
+import { Controller, Req, UseGuards, Res, Post, Body, Param, HttpCode, HttpStatus } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import type { Request, Response } from 'express';
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
+import { QrService } from '../services/qr.service';
 
 interface UserPayload {
     userId: string;
@@ -19,6 +20,7 @@ interface RequestWithResident extends Request {
 
 @Controller('api/access')
 export class QrController{
+    constructor(private readonly qrService: QrService) {}
 
     @UseGuards(AuthGuard('jwt'))
     @Post('resident/qr')
@@ -151,6 +153,92 @@ export class QrController{
             return res.status(500).json({
                 success: false,
                 message: 'Error interno al validar el QR'
+            });
+        }
+    }
+
+    /**
+     * POST /api/access/validate-visitor-qr
+     * Validar QR de visitante, crear visitor y registrar check-in
+     */
+    @Post('validate-visitor-qr')
+    @HttpCode(HttpStatus.OK)
+    async validateVisitorQr(@Req() req: Request, @Res() res: Response) {
+        try {
+            const { qrData } = req.body;
+
+            if (!qrData) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Datos del QR no proporcionados'
+                });
+            }
+
+            const ipAddress = req.ip || req.connection?.remoteAddress;
+            const userAgent = req.headers['user-agent'];
+
+            const result = await this.qrService.validateVisitorQR(
+                qrData,
+                ipAddress,
+                userAgent,
+            );
+
+            return res.status(200).json(result);
+
+        } catch (error) {
+            console.error('❌ Error al validar QR de visitante:', error);
+            
+            // Manejar errores conocidos
+            if (error.status) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: 'Error interno al validar el QR del visitante'
+            });
+        }
+    }
+
+    /**
+     * POST /api/access/visitor/:id/checkout
+     * Registrar salida (check-out) de un visitante
+     */
+    @Post('visitor/:id/checkout')
+    @HttpCode(HttpStatus.OK)
+    async checkOutVisitor(
+        @Param('id') visitorId: string,
+        @Req() req: Request,
+        @Res() res: Response
+    ) {
+        try {
+            const ipAddress = req.ip || req.connection?.remoteAddress;
+            const userAgent = req.headers['user-agent'];
+
+            const result = await this.qrService.checkOutVisitor(
+                visitorId,
+                ipAddress,
+                userAgent,
+            );
+
+            return res.status(200).json(result);
+
+        } catch (error) {
+            console.error('❌ Error al registrar check-out:', error);
+            
+            if (error.status) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message
+                });
+            }
+
+            return res.status(500).json({
+                success: false,
+                message: 'Error interno al registrar el check-out'
             });
         }
     }
