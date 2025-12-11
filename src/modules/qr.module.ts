@@ -5,11 +5,11 @@ import { QrService } from 'src/services/qr.service';
 import { Invitation } from 'src/entities/invitation.entity';
 import { Visitor } from 'src/entities/visitor.entity';
 import { Resident } from 'src/entities/resident.entity';
-import { Log } from 'src/entities/log.entity';
+import { EntryLog } from 'src/entities/entry-log.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Invitation, Visitor, Resident, Log]),
+    TypeOrmModule.forFeature([Invitation, Visitor, Resident, EntryLog]),
   ],
   controllers: [QrController],
   providers: [QrService],

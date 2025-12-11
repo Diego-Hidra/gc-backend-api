@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Invitation, InvitationStatus } from '../entities/invitation.entity';
 import { Visitor, VisitorStatus } from '../entities/visitor.entity';
 import { Resident } from '../entities/resident.entity';
-import { Log, LogType, LogAction } from '../entities/log.entity';
+import { EntryLog, EntryMethod } from '../entities/entry-log.entity';
 import * as crypto from 'crypto';
 
 interface VisitorQRData {
@@ -33,7 +33,7 @@ interface ValidateVisitorQRResult {
   data?: {
     visitor: Visitor;
     invitation: Invitation;
-    log: Log;
+    entryLog: EntryLog;
     validatedAt: string;
   };
 }
@@ -47,12 +47,12 @@ export class QrService {
     private visitorRepository: Repository<Visitor>,
     @InjectRepository(Resident)
     private residentRepository: Repository<Resident>,
-    @InjectRepository(Log)
-    private logRepository: Repository<Log>,
+    @InjectRepository(EntryLog)
+    private entryLogRepository: Repository<EntryLog>,
   ) {}
 
   /**
-   * Validar QR de visitante, crear visitor y registrar log de ingreso
+   * Validar QR de visitante, crear visitor y registrar entry_log de ingreso
    */
   async validateVisitorQR(qrData: string, ipAddress?: string, userAgent?: string): Promise<ValidateVisitorQRResult> {
     console.log('\n🔍 [QrService] Validando QR de visitante...');
@@ -78,37 +78,11 @@ export class QrService {
     });
 
     if (!invitation) {
-      // Registrar intento fallido
-      await this.createAccessLog({
-        type: LogType.ACCESS,
-        action: LogAction.ACCESS_DENIED,
-        description: `Intento de acceso con invitación inexistente: ${parsedData.invitationId}`,
-        severity: 'warning',
-        details: { reason: 'invitation_not_found', qrData: parsedData },
-        ipAddress,
-        userAgent,
-      });
       throw new NotFoundException('Invitación no encontrada');
     }
 
     // 4. Validar estado de la invitación
     if (invitation.status !== InvitationStatus.APPROVED) {
-      await this.createAccessLog({
-        type: LogType.ACCESS,
-        action: LogAction.ACCESS_DENIED,
-        description: `Intento de acceso con invitación en estado: ${invitation.status}`,
-        userId: invitation.residentId,
-        entityType: 'invitation',
-        entityId: invitation.id,
-        severity: 'warning',
-        details: { 
-          reason: 'invalid_invitation_status', 
-          currentStatus: invitation.status,
-          visitorName: `${parsedData.firstName} ${parsedData.lastName}`,
-        },
-        ipAddress,
-        userAgent,
-      });
       throw new BadRequestException(`La invitación no está aprobada. Estado actual: ${invitation.status}`);
     }
 
@@ -118,44 +92,11 @@ export class QrService {
       // Actualizar estado a expirado
       invitation.status = InvitationStatus.EXPIRED;
       await this.invitationRepository.save(invitation);
-
-      await this.createAccessLog({
-        type: LogType.ACCESS,
-        action: LogAction.ACCESS_DENIED,
-        description: `Invitación expirada para ${parsedData.firstName} ${parsedData.lastName}`,
-        userId: invitation.residentId,
-        entityType: 'invitation',
-        entityId: invitation.id,
-        severity: 'warning',
-        details: { 
-          reason: 'invitation_expired',
-          expirationDate: invitation.expirationDate,
-          visitorName: `${parsedData.firstName} ${parsedData.lastName}`,
-        },
-        ipAddress,
-        userAgent,
-      });
       throw new BadRequestException('La invitación ha expirado');
     }
 
     // 6. Verificar que el RUT coincida
     if (invitation.rut !== parsedData.rut) {
-      await this.createAccessLog({
-        type: LogType.ACCESS,
-        action: LogAction.ACCESS_DENIED,
-        description: `RUT no coincide con la invitación`,
-        userId: invitation.residentId,
-        entityType: 'invitation',
-        entityId: invitation.id,
-        severity: 'warning',
-        details: { 
-          reason: 'rut_mismatch',
-          expectedRut: invitation.rut,
-          providedRut: parsedData.rut,
-        },
-        ipAddress,
-        userAgent,
-      });
       throw new BadRequestException('El RUT no coincide con la invitación');
     }
 
@@ -185,31 +126,28 @@ export class QrService {
     await this.invitationRepository.save(invitation);
     console.log(`✅ [QrService] Invitación marcada como usada: ${invitation.id}`);
 
-    // 9. Crear log de ingreso exitoso
-    const accessLog = await this.createAccessLog({
-      type: LogType.ACCESS,
-      action: LogAction.CHECK_IN,
-      description: `Check-in de visitante: ${parsedData.firstName} ${parsedData.lastName} (${parsedData.rut})`,
-      userId: invitation.residentId,
-      entityType: 'visitor',
-      entityId: savedVisitor.id,
-      severity: 'info',
-      details: {
-        visitorId: savedVisitor.id,
-        invitationId: invitation.id,
+    // 9. Crear entry_log de ingreso exitoso
+    const entryLog = await this.createEntryLog({
+      entryMethod: EntryMethod.QR,
+      visitorId: savedVisitor.id,
+      residentId: invitation.residentId,
+      invitationId: invitation.id,
+      arrivalTime: now,
+      payload: {
         visitorName: `${parsedData.firstName} ${parsedData.lastName}`,
         visitorRut: parsedData.rut,
-        residentId: invitation.residentId,
         residentName: invitation.resident ? `${invitation.resident.firstName} ${invitation.resident.lastName}` : null,
         hasVehicle: parsedData.hasVehicle,
         vehicleInfo: parsedData.vehicleInfo,
-        checkInTime: now.toISOString(),
       },
-      ipAddress,
-      userAgent,
+      metadata: {
+        ipAddress,
+        userAgent,
+        source: 'qr_validation',
+      },
     });
 
-    console.log(`✅ [QrService] Log de acceso creado: ${accessLog.id}`);
+    console.log(`✅ [QrService] Entry log creado: ${entryLog.id}`);
 
     return {
       success: true,
@@ -217,7 +155,7 @@ export class QrService {
       data: {
         visitor: savedVisitor,
         invitation: invitation,
-        log: accessLog,
+        entryLog: entryLog,
         validatedAt: now.toISOString(),
       },
     };
@@ -229,7 +167,7 @@ export class QrService {
   async checkOutVisitor(visitorId: string, ipAddress?: string, userAgent?: string): Promise<{
     success: boolean;
     message: string;
-    data?: { visitor: Visitor; log: Log };
+    data?: { visitor: Visitor; entryLog: EntryLog };
   }> {
     const visitor = await this.visitorRepository.findOne({
       where: { id: visitorId },
@@ -250,29 +188,56 @@ export class QrService {
     
     const updatedVisitor = await this.visitorRepository.save(visitor);
 
-    // Crear log de salida
-    const checkOutLog = await this.createAccessLog({
-      type: LogType.ACCESS,
-      action: LogAction.CHECK_OUT,
-      description: `Check-out de visitante: ${visitor.firstName} ${visitor.lastName} (${visitor.rut})`,
-      userId: visitor.residentId,
-      entityType: 'visitor',
-      entityId: visitor.id,
-      severity: 'info',
-      details: {
-        visitorId: visitor.id,
+    // Buscar el entry_log de entrada y actualizar con la salida
+    const existingEntryLog = await this.entryLogRepository.findOne({
+      where: { visitorId: visitor.id },
+      order: { arrivalTime: 'DESC' },
+    });
+
+    if (existingEntryLog) {
+      // Actualizar el entry_log existente con la hora de salida
+      existingEntryLog.departureTime = now;
+      existingEntryLog.metadata = {
+        ...existingEntryLog.metadata,
+        checkOutIpAddress: ipAddress,
+        checkOutUserAgent: userAgent,
+        duration: visitor.checkInTime 
+          ? Math.round((now.getTime() - visitor.checkInTime.getTime()) / 60000) + ' minutos'
+          : null,
+      };
+      await this.entryLogRepository.save(existingEntryLog);
+
+      return {
+        success: true,
+        message: 'Check-out registrado correctamente',
+        data: {
+          visitor: updatedVisitor,
+          entryLog: existingEntryLog,
+        },
+      };
+    }
+
+    // Si no existe entry_log previo, crear uno nuevo con la salida
+    const checkOutLog = await this.createEntryLog({
+      entryMethod: EntryMethod.QR,
+      visitorId: visitor.id,
+      residentId: visitor.residentId,
+      departureTime: now,
+      payload: {
         visitorName: `${visitor.firstName} ${visitor.lastName}`,
         visitorRut: visitor.rut,
-        residentId: visitor.residentId,
         residentName: visitor.resident ? `${visitor.resident.firstName} ${visitor.resident.lastName}` : null,
+        action: 'check_out',
+      },
+      metadata: {
+        ipAddress,
+        userAgent,
+        source: 'qr_checkout',
         checkInTime: visitor.checkInTime?.toISOString(),
-        checkOutTime: now.toISOString(),
         duration: visitor.checkInTime 
           ? Math.round((now.getTime() - visitor.checkInTime.getTime()) / 60000) + ' minutos'
           : null,
       },
-      ipAddress,
-      userAgent,
     });
 
     return {
@@ -280,30 +245,117 @@ export class QrService {
       message: 'Check-out registrado correctamente',
       data: {
         visitor: updatedVisitor,
-        log: checkOutLog,
+        entryLog: checkOutLog,
       },
     };
   }
 
   /**
-   * Helper para crear logs de acceso
+   * Validar QR de residente y registrar entry_log de ingreso
    */
-  private async createAccessLog(logData: {
-    type: LogType;
-    action: LogAction;
-    description: string;
-    userId?: string;
-    entityType?: string;
-    entityId?: string;
-    severity: string;
-    details?: Record<string, any>;
-    ipAddress?: string;
-    userAgent?: string;
-  }): Promise<Log> {
-    const log = this.logRepository.create({
-      ...logData,
-      timestamp: new Date(),
+  async validateResidentQR(
+    residentId: string,
+    expiration: number,
+    signature: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data?: {
+      residentId: string;
+      resident?: Resident;
+      entryLog: EntryLog;
+      validatedAt: string;
+      expiresInMinutes: number;
+      expiresAt: string;
+    };
+  }> {
+    console.log('\n🔍 [QrService] Validando QR de residente...');
+
+    const currentTime = Date.now();
+
+    // 1. Verificar expiración
+    if (currentTime > expiration) {
+      const expiredMinutes = Math.floor((currentTime - expiration) / 60000);
+      console.log(`❌ QR EXPIRADO hace ${expiredMinutes} minuto(s)`);
+      throw new BadRequestException(`QR expirado hace ${expiredMinutes} minuto(s)`);
+    }
+
+    // 2. Verificar firma HMAC
+    const QR_SECRET = process.env.QR_SECRET || '';
+    const user_type = 'resident';
+    const dataToHash = `${residentId}:${user_type}:${expiration}`;
+
+    const expectedSignature = crypto
+      .createHmac('sha256', QR_SECRET)
+      .update(dataToHash)
+      .digest('hex');
+
+    if (signature !== expectedSignature) {
+      console.log('❌ Firma HMAC inválida - QR adulterado');
+      throw new BadRequestException('QR inválido o adulterado');
+    }
+
+    // 3. Buscar residente en la base de datos
+    const resident = await this.residentRepository.findOne({
+      where: { id: residentId },
     });
-    return await this.logRepository.save(log);
+
+    const now = new Date();
+    const remainingMinutes = Math.floor((expiration - currentTime) / 60000);
+
+    // 4. Crear entry_log de ingreso
+    const entryLog = await this.createEntryLog({
+      entryMethod: EntryMethod.QR,
+      residentId: residentId,
+      arrivalTime: now,
+      payload: {
+        residentName: resident ? `${resident.firstName} ${resident.lastName}` : null,
+        residentRut: resident?.rut,
+        qrExpiresAt: new Date(expiration).toISOString(),
+      },
+      metadata: {
+        ipAddress,
+        userAgent,
+        source: 'resident_qr_validation',
+        remainingMinutes,
+      },
+    });
+
+    console.log(`✅ QR VÁLIDO - Residente ID: ${residentId}, Expira en ${remainingMinutes} minuto(s)`);
+    console.log(`✅ [QrService] Entry log creado: ${entryLog.id}`);
+
+    return {
+      success: true,
+      message: 'QR válido - Acceso autorizado',
+      data: {
+        residentId,
+        resident: resident || undefined,
+        entryLog,
+        validatedAt: now.toISOString(),
+        expiresInMinutes: remainingMinutes,
+        expiresAt: new Date(expiration).toISOString(),
+      },
+    };
+  }
+
+  /**
+   * Helper para crear entry logs
+   */
+  private async createEntryLog(logData: {
+    entryMethod: EntryMethod;
+    visitorId?: string;
+    residentId?: string;
+    guardId?: string;
+    vehicleId?: string;
+    invitationId?: string;
+    arrivalTime?: Date;
+    departureTime?: Date;
+    payload?: Record<string, any>;
+    metadata?: Record<string, any>;
+  }): Promise<EntryLog> {
+    const entryLog = this.entryLogRepository.create(logData);
+    return await this.entryLogRepository.save(entryLog);
   }
 }

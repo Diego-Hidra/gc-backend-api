@@ -7,9 +7,10 @@ import {
   HttpCode,
   ParseIntPipe,
   DefaultValuePipe,
+  ParseBoolPipe,
 } from '@nestjs/common';
-import { EntryLogService, AccessMethod } from '../services/entry-log.service';
-import { LogAction } from '../entities/log.entity';
+import { EntryLogService } from '../services/entry-log.service';
+import { EntryMethod } from '../entities/entry-log.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('api/entry-logs')
@@ -94,14 +95,34 @@ export class EntryLogController {
   }
 
   /**
+   * GET /api/entry-logs/active
+   * Obtener visitantes actualmente en la propiedad (sin checkout)
+   */
+  @Get('active')
+  @HttpCode(HttpStatus.OK)
+  async getActiveVisitors() {
+    return this.entryLogService.getActiveVisitors();
+  }
+
+  /**
+   * GET /api/entry-logs/stats
+   * Obtener estadísticas de entry logs
+   */
+  @Get('stats')
+  @HttpCode(HttpStatus.OK)
+  async getEntryStats() {
+    return this.entryLogService.getEntryStats();
+  }
+
+  /**
    * GET /api/entry-logs/all
    * Obtener todos los entry logs con filtros opcionales
    * 
    * Query params:
    * - page: número de página (default: 1)
    * - limit: registros por página (default: 50, max: 200)
-   * - method: filtrar por método (qr, facial, vehicle_plate)
-   * - action: filtrar por acción (check_in, check_out)
+   * - method: filtrar por método (qr, facial, lpr, manual, invitation)
+   * - hasCheckOut: filtrar por si tiene salida registrada (true/false)
    * - startDate: fecha inicio (YYYY-MM-DD)
    * - endDate: fecha fin (YYYY-MM-DD)
    */
@@ -110,16 +131,17 @@ export class EntryLogController {
   async getAllEntryLogs(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
-    @Query('method') method?: AccessMethod,
-    @Query('action') action?: LogAction,
+    @Query('method') method?: EntryMethod,
+    @Query('hasCheckOut') hasCheckOut?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
   ) {
+    const hasCheckOutBool = hasCheckOut === 'true' ? true : hasCheckOut === 'false' ? false : undefined;
     return this.entryLogService.getAllEntryLogs(
       page,
       Math.min(limit, 200),
       method,
-      action,
+      hasCheckOutBool,
       startDate,
       endDate,
     );
