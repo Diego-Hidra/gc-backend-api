@@ -67,8 +67,9 @@ export class InvitationService {
     };
 
     // Si se proporciona frequentVisitorId, autocompletar datos desde el visitante frecuente
+    let frequentVisitor: FrequentVisitor | null = null;
     if (createInvitationDto.frequentVisitorId) {
-      const frequentVisitor = await this.frequentVisitorRepository.findOne({ 
+      frequentVisitor = await this.frequentVisitorRepository.findOne({ 
         where: { id: createInvitationDto.frequentVisitorId } 
       });
       
@@ -113,6 +114,15 @@ export class InvitationService {
 
     const invitation = this.invitationRepository.create(invitationData);
     const savedInvitation = await this.invitationRepository.save(invitation) as unknown as Invitation;
+
+    // Actualizar contador de visitas del visitante frecuente si aplica
+    if (frequentVisitor) {
+      frequentVisitor.visitCount += 1;
+      frequentVisitor.lastVisit = new Date();
+      await this.frequentVisitorRepository.save(frequentVisitor);
+      console.log(`📊 Contador de visitas actualizado para visitante frecuente ${frequentVisitor.id}: ${frequentVisitor.visitCount}`);
+    }
+
     return savedInvitation;
   }
 
