@@ -28,7 +28,10 @@ test:
     PG_USER: testuser_ci
     PG_PASS: testpass_ci
     PG_DB: testdb_ci
+    PG_PORT: "5432"
+    PORT: "8080"
     JWT_SECRET: testing-secret
+    JWT_EXPIRATION: "1d"
 
   before_script:
     - rm -rf pgdata || true
@@ -40,8 +43,12 @@ test:
     - echo "PG_USER=$PG_USER" > .env.test
     - echo "PG_PASS=$PG_PASS" >> .env.test
     - echo "PG_DB=$PG_DB" >> .env.test
+    - echo "PG_PORT=$PG_PORT" >> .env.test
+    - echo "PORT=$PORT" >> .env.test
+    - echo "JWT_SECRET=$JWT_SECRET" >> .env.test
+    - echo "JWT_EXPIRATION=$JWT_EXPIRATION" >> .env.test
 
-    - docker-compose --env-file .env.test -f docker-compose.yml up -d
+    - docker-compose --env-file .env.test -f docker-compose.yml up -d --wait
     - docker-compose --env-file .env.test -f docker-compose.yml run --rm api npm run test:integration
     - docker-compose --env-file .env.test -f docker-compose.yml down
 
