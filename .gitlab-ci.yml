@@ -80,6 +80,9 @@ deploy:
       echo 'PG_USER=$PG_USER' >> .env
       echo 'PG_PASS=$PG_PASS' >> .env
       echo 'PORT=$PORT' >> .env
+      echo 'ACCOUNT_NAME=$ACCOUNT_NAME' >> .env
+      echo 'ACCOUNT_KEY=$ACCOUNT_KEY' >> .env
+      echo 'AZURE_STORAGE_CONNECTION_STRING=$AZURE_STORAGE_CONNECTION_STRING' >> .env
       docker-compose down --remove-orphans || true
       docker-compose up -d --build
       "
