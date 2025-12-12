@@ -60,7 +60,8 @@ export class AuthService {
         const apartament = user.apartment;
         const block = user.block;
         const lotNumber = user.lotNumber;
-        console.log('🏢 Datos de residente:', { floor, apartament, block, lotNumber });
+        const profilePicture = user.profilePicture;
+        console.log('🏢 Datos de residente:', { floor, apartament, block, lotNumber, profilePicture });
 
         const payload = { 
             sub: user.id, 
@@ -70,7 +71,8 @@ export class AuthService {
             floor: floor,
             apartament: apartament,
             block: block,
-            lotNumber: lotNumber
+            lotNumber: lotNumber,
+            profilePicture: profilePicture
         };
 
         const access_token = this.jwtService.sign(payload);
