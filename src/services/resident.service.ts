@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from "@nestjs/common";
+import { Injectable, ConflictException, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike} from 'typeorm';
 import { Resident } from "src/entities/resident.entity";
@@ -166,6 +166,46 @@ export class ResidentService {
 
     return updatedResident; 
     
+    }
+
+    /**
+     * Desactiva un residente (soft delete)
+     * @param id ID del residente a desactivar
+     * @returns Residente desactivado
+     */
+    async deactivateResident(id: string): Promise<Resident> {
+        const resident = await this.residentRepository.findOne({ where: { id } });
+
+        if (!resident) {
+            throw new NotFoundException(`Residente con ID "${id}" no encontrado.`);
+        }
+
+        if (!resident.isActive) {
+            throw new BadRequestException(`El residente ya está desactivado.`);
+        }
+
+        resident.isActive = false;
+        return await this.residentRepository.save(resident);
+    }
+
+    /**
+     * Reactiva un residente desactivado
+     * @param id ID del residente a reactivar
+     * @returns Residente reactivado
+     */
+    async activateResident(id: string): Promise<Resident> {
+        const resident = await this.residentRepository.findOne({ where: { id } });
+
+        if (!resident) {
+            throw new NotFoundException(`Residente con ID "${id}" no encontrado.`);
+        }
+
+        if (resident.isActive) {
+            throw new BadRequestException(`El residente ya está activo.`);
+        }
+
+        resident.isActive = true;
+        return await this.residentRepository.save(resident);
     }
 
 }

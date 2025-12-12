@@ -33,4 +33,7 @@ export class CreateResidentDTO {
 
     @IsOptional()
     lotNumber: string;
+
+    @IsOptional()
+    profilePicture: string;
 }
