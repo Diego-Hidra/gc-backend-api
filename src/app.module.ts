@@ -46,7 +46,8 @@ import { EmbeddingModule } from './modules/embedding.module';
     VehicleModule, 
     FrequentVisitorModule, 
     LogModule,
-    EntryLogModule],
+    EntryLogModule,
+    EmbeddingModule],
   controllers: [],
   providers: [],
 })

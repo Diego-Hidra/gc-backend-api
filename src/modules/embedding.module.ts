@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
 import { GenerateEmbeddingController } from '../controllers/embedding.controller';
-import { GenerateEmbeddingService } from '../services/embedding.service'
-import { HttpModule } from '@nestjs/axios';
+import { GenerateEmbeddingService } from '../services/embedding.service';
+
 @Module({
-  imports: [
-    HttpModule
-  ],
   controllers: [GenerateEmbeddingController],
   providers: [GenerateEmbeddingService],
+  exports: [GenerateEmbeddingService], // Exportamos por si otro módulo necesita generar embeddings
 })
 export class EmbeddingModule {}
