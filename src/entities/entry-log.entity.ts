@@ -13,9 +13,13 @@ import { Vehicle } from './vehicle.entity';
 import { Invitation } from './invitation.entity';
 
 export enum EntryMethod {
-  FACIAL = 'facial',
-  LPR = 'lpr',
-  QR = 'qr',
+  FACIAL = 'FCR',
+  NFACIAL = 'NFCR',
+  UFACIAL = 'UFCR',
+  LPR = 'LPR',
+  QR = 'QR',
+  NLP = 'NLPR',
+  ULP = 'ULPR',
   MANUAL = 'manual',
   INVITATION = 'invitation',
 }

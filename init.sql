@@ -65,7 +65,7 @@ CREATE TYPE log_action AS ENUM (
 );
 
 -- Enum para método de entrada (reconocimiento)
-CREATE TYPE entry_method AS ENUM ('facial', 'lpr', 'qr', 'manual', 'invitation');
+CREATE TYPE entry_method AS ENUM ('FCR', 'LPR', 'QR', 'NLPR', 'ULPR', 'NFCR', 'UFCR', 'manual', 'invitation');
 
 -- ============================================================================
 -- 4. CREAR TABLAS INDEPENDIENTES (sin dependencias)
