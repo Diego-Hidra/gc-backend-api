@@ -26,10 +26,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Check Docker & Compose versions
+        run: |
+          docker --version
+          docker compose version
+
       - name: Build Docker images
         run: |
           rm -rf pgdata || true
-          docker-compose -f docker-compose.yml build
+          docker compose -f docker-compose.yml build
 
   test:
     name: Test
@@ -65,9 +70,9 @@ jobs:
 
       - name: Start services and run tests
         run: |
-          docker-compose --env-file .env.test -f docker-compose.yml up -d --wait
-          docker-compose --env-file .env.test -f docker-compose.yml run --rm api npm run test:integration
-          docker-compose --env-file .env.test -f docker-compose.yml down
+          docker compose --env-file .env.test -f docker-compose.yml up -d --wait
+          docker compose --env-file .env.test -f docker-compose.yml run --rm api npm run test:integration
+          docker compose --env-file .env.test -f docker-compose.yml down
 
   deploy:
     name: Deploy
@@ -130,6 +135,6 @@ jobs:
           echo "ACCOUNT_NAME='$ACCOUNT_NAME'" >> .env
           echo "ACCOUNT_KEY='$ACCOUNT_KEY'" >> .env
           echo "AZURE_STORAGE_CONNECTION_STRING='$AZURE_STORAGE_CONNECTION_STRING'" >> .env
-          docker-compose down --remove-orphans || true
-          docker-compose up -d --build
+          docker compose down --remove-orphans || true
+          docker compose up -d --build
           '
