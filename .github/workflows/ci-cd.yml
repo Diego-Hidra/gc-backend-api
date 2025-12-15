@@ -159,7 +159,7 @@ jobs:
           scp -i ~/.ssh/id_rsa -r ./* "$AZURE_USER@$AZURE_HOST:~/gc-backend-api"
 
           ssh -i ~/.ssh/id_rsa "$AZURE_USER@$AZURE_HOST" '
-          docker image prune -f
+          sudo docker image prune -f || true
           cd ~/gc-backend-api
 
           echo "Generating .env file"
@@ -176,7 +176,7 @@ jobs:
           echo "ACCOUNT_NAME='$ACCOUNT_NAME'" >> .env
           echo "ACCOUNT_KEY='$ACCOUNT_KEY'" >> .env
           echo "AZURE_STORAGE_CONNECTION_STRING='$AZURE_STORAGE_CONNECTION_STRING'" >> .env
-          docker compose down --remove-orphans || true
-          docker compose build --build-arg ENABLE_EMBEDDINGS=true
-          docker compose up -d
+          sudo docker compose down --remove-orphans || true
+          sudo docker compose build --build-arg ENABLE_EMBEDDINGS=true
+          sudo docker compose up -d
           '
