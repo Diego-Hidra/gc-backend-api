@@ -26,22 +26,32 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Free disk space before build
+      - name: Free disk space aggressively
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Additional cleanup
         run: |
-          sudo rm -rf /usr/local/lib/python3.11/dist-packages/nvidia || true
-          docker system df || true
           docker system prune -af || true
           docker builder prune -af || true
           rm -rf pgdata || true
+          df -h
 
       - name: Check Docker & Compose versions
         run: |
           docker --version
           docker compose version
 
-      - name: Build Docker images
+      - name: Build Docker images (without ML deps for CI)
         run: |
-          docker compose -f docker-compose.yml build --pull
+          docker compose -f docker-compose.yml build --build-arg ENABLE_EMBEDDINGS=false
           docker system df || true
 
   test:
@@ -145,5 +155,6 @@ jobs:
           echo "ACCOUNT_KEY='$ACCOUNT_KEY'" >> .env
           echo "AZURE_STORAGE_CONNECTION_STRING='$AZURE_STORAGE_CONNECTION_STRING'" >> .env
           docker compose down --remove-orphans || true
-          docker compose up -d --build
+          docker compose build --build-arg ENABLE_EMBEDDINGS=true
+          docker compose up -d
           '
