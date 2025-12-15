@@ -59,6 +59,49 @@
 						"description": "Autenticación de usuario. Retorna access_token que se guarda automáticamente."
 					},
 					"response": []
+				},
+				{
+					"name": "01.2 Login Residente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201 || pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"access_token\", jsonData.data.access_token);",
+									"    pm.environment.set(\"resident_id\", jsonData.data.resident_id);",
+									"    console.log(\"✅ Token guardado:\", jsonData.data.access_token);",
+									"    console.log(\"✅ Resident ID guardado:\", jsonData.data.resident_id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"juan.perez@test.com\",\n  \"password\": \"Test1234\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/resident",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "resident"]
+						},
+						"description": "Login de residente. Retorna access_token y resident_id que se guardan automáticamente en el environment."
+					},
+					"response": []
 				}
 			]
 		},
@@ -358,6 +401,52 @@
 							"path": ["api", "resident", "{{resident_id}}", "stats"]
 						},
 						"description": "Obtener estadísticas generales de un residente (visitantes, invitaciones, vehículos)."
+					},
+					"response": []
+				},
+				{
+					"name": "02.15 Subir Foto de Perfil",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"image\": \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAAA//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAgEDEQA/AIHw0//Z\"\n}\n"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/resident/{{resident_id}}/profile-picture",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "{{resident_id}}", "profile-picture"]
+						},
+						"description": "Subir una foto de perfil para un residente. La imagen debe enviarse en formato base64 con el prefijo 'data:image/[tipo];base64,[datos]' donde [tipo] puede ser jpeg, png, gif, etc."
+					},
+					"response": []
+				},
+				{
+					"name": "02.16 Subir Foto de Perfil (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"image\": \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAAA//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAgEDEQA/AIHw0//Z\"\n}\n"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/resident/{{resident_id}}/profile-picture/admin",
+							"host": ["{{base_url}}"],
+							"path": ["api", "resident", "{{resident_id}}", "profile-picture", "admin"]
+						},
+						"description": "Subir una foto de perfil para un residente como administrador. Requiere rol ADMIN. La imagen debe enviarse en formato base64 con el prefijo 'data:image/[tipo];base64,[datos]'."
 					},
 					"response": []
 				}

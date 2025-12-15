@@ -23,7 +23,7 @@
 --     CONNECTION LIMIT = -1;
 
 -- Conectar a la base de datos
-\c guardian_comunitario_db
+\c guardian_comunitario
 
 -- ============================================================================
 -- 2. CREAR EXTENSIONES
