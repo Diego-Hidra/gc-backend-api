@@ -182,6 +182,48 @@ export class EntryLogService {
   }
 
   /**
+   * Obtener entry logs de la semana - Vehículos
+   */
+  async getWeekVehicleLogs(
+    page: number = 1,
+    limit: number = 50,
+  ): Promise<{
+    success: boolean;
+    data: EntryLog[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+    period: { start: string; end: string };
+  }> {
+    const endOfWeek = new Date();
+    endOfWeek.setHours(23, 59, 59, 999);
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - 7);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const skip = (page - 1) * limit;
+
+    const [vehicleLogs, total] = await this.entryLogRepository
+      .createQueryBuilder('entry')
+      .leftJoinAndSelect('entry.vehicle', 'vehicle')
+      .leftJoinAndSelect('entry.resident', 'resident')
+      .where('entry.entryMethod IN (:...methods)', { methods: this.VEHICLE_METHODS })
+      .andWhere('entry.arrivalTime BETWEEN :start AND :end', { start: startOfWeek, end: endOfWeek })
+      .orderBy('entry.arrivalTime', 'DESC')
+      .skip(skip)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      success: true,
+      data: vehicleLogs,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      period: {
+        start: startOfWeek.toISOString().split('T')[0],
+        end: endOfWeek.toISOString().split('T')[0],
+      },
+    };
+  }
+
+  /**
    * Obtener entry logs de la semana - Personal (QR + Sistema Facial)
    */
   async getWeekPersonalLogs(
