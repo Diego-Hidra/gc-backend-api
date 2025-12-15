@@ -73,8 +73,27 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Clean up previous data
-        run: rm -rf pgdata || true
+      - name: Free disk space aggressively
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Additional cleanup
+        run: |
+          docker system prune -af || true
+          docker builder prune -af || true
+          rm -rf pgdata || true
+          df -h
+
+      - name: Build test images (without ML deps)
+        run: |
+          docker compose -f docker-compose.yml build --build-arg ENABLE_EMBEDDINGS=false
 
       - name: Create test environment file
         run: |
