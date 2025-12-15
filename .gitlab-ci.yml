@@ -1,0 +1,98 @@
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  COMPOSE_PROJECT_NAME: gcproject
+
+build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - rm -rf pgdata || true
+  script:
+    - docker-compose -f docker-compose.yml build
+  
+test:
+  stage: test
+  image: docker:latest
+  services:
+    - docker:dind
+
+  variables: 
+    PG_USER: testuser_ci
+    PG_PASS: testpass_ci
+    PG_DB: testdb_ci
+    PG_PORT: "5432"
+    PORT: "8080"
+    JWT_SECRET: testing-secret
+    JWT_EXPIRATION: "1d"
+
+  before_script:
+    - rm -rf pgdata || true
+
+  script:
+
+    - echo "Setting up test environment variables..."
+
+    - echo "PG_USER=$PG_USER" > .env.test
+    - echo "PG_PASS=$PG_PASS" >> .env.test
+    - echo "PG_DB=$PG_DB" >> .env.test
+    - echo "PG_PORT=$PG_PORT" >> .env.test
+    - echo "PORT=$PORT" >> .env.test
+    - echo "JWT_SECRET=$JWT_SECRET" >> .env.test
+    - echo "JWT_EXPIRATION=$JWT_EXPIRATION" >> .env.test
+
+    - docker-compose --env-file .env.test -f docker-compose.yml up -d --wait
+    - docker-compose --env-file .env.test -f docker-compose.yml run --rm api npm run test:integration
+    - docker-compose --env-file .env.test -f docker-compose.yml down
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+
+  before_script:
+    - rm -rf pgdata || true
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+
+  script:
+    - echo "Deploying application..."
+    - ssh $AZURE_USER@$AZURE_HOST "mkdir -p ~/gc-backend-api"
+    - scp -r ./* $AZURE_USER@$AZURE_HOST:~/gc-backend-api
+
+    - |
+     
+      ssh $AZURE_USER@$AZURE_HOST "
+      docker image prune -f
+      cd ~/gc-backend-api
+
+      echo 'Generando el archivo .env'
+
+      echo 'JWT_SECRET=$JWT_SECRET' > .env
+      echo 'JWT_EXPIRATION=$JWT_EXPIRATION' >> .env
+      echo 'QR_SECRET=$QR_SECRET' >> .env
+      echo 'PG_HOST=$PG_HOST' >> .env
+      echo 'PG_PORT=$PG_PORT' >> .env
+      echo 'PG_DB=$PG_DB' >> .env
+      echo 'PG_USER=$PG_USER' >> .env
+      echo 'PG_PASS=$PG_PASS' >> .env
+      echo 'PORT=$PORT' >> .env
+      echo 'ACCOUNT_NAME=$ACCOUNT_NAME' >> .env
+      echo 'ACCOUNT_KEY=$ACCOUNT_KEY' >> .env
+      echo 'AZURE_STORAGE_CONNECTION_STRING=$AZURE_STORAGE_CONNECTION_STRING' >> .env
+      docker-compose down --remove-orphans || true
+      docker-compose up -d --build
+      "
+      
+  only:
+    - main
