@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
+import { BlobServiceClient, StorageSharedKeyCredential, ContainerClient } from '@azure/storage-blob';
 
 @Injectable()
 export class AzureBlobService {
@@ -7,15 +7,20 @@ export class AzureBlobService {
   private readonly containerName = 'profile-images';
 
   constructor() {
-    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    const accountName = process.env.ACCOUNT_NAME;
+    const accountKey = process.env.ACCOUNT_KEY;
     
-    if (!connectionString) {
-      console.warn('⚠️ AZURE_STORAGE_CONNECTION_STRING no configurado');
+    if (!accountName || !accountKey) {
+      console.warn('⚠️ ACCOUNT_NAME o ACCOUNT_KEY no configurados');
       return;
     }
 
     try {
-      const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+      const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+      const blobServiceClient = new BlobServiceClient(
+        `https://${accountName}.blob.core.windows.net`,
+        sharedKeyCredential
+      );
       this.containerClient = blobServiceClient.getContainerClient(this.containerName);
       
       // Crear el contenedor si no existe
@@ -42,7 +47,7 @@ export class AzureBlobService {
 
   /**
    * Sube una imagen en base64 a Azure Blob Storage
-   * @param base64Image Imagen en formato base64 (con o sin prefijo data:image)
+   * @param base64Image Imagen en formato base64 con prefijo data:image/...;base64,...
    * @param fileName Nombre del archivo (sin extensión)
    * @returns URL pública de la imagen
    */
@@ -52,42 +57,47 @@ export class AzureBlobService {
     }
 
     try {
-      // Extraer el tipo de imagen y los datos del base64
-      let imageBuffer: Buffer;
-      let extension = 'jpg';
-      let contentType = 'image/jpeg';
-
-      if (base64Image.includes('data:image')) {
-        // Formato: data:image/png;base64,iVBORw0KGgo...
-        const matches = base64Image.match(/^data:image\/(\w+);base64,(.+)$/);
-        if (matches) {
-          extension = matches[1] === 'jpeg' ? 'jpg' : matches[1];
-          contentType = `image/${matches[1]}`;
-          imageBuffer = Buffer.from(matches[2], 'base64');
-        } else {
-          throw new BadRequestException('Formato de imagen base64 inválido');
-        }
-      } else {
-        // Solo datos base64 sin prefijo
-        imageBuffer = Buffer.from(base64Image, 'base64');
+      // Regex para extraer MIME type y datos base64
+      const mimeTypeRegex = /^data:(image\/[a-z]+);base64,/;
+      const matches = base64Image.match(mimeTypeRegex);
+      
+      if (!matches) {
+        throw new BadRequestException(
+          'Formato de imagen base64 inválido. Use: data:image/[tipo];base64,[datos]'
+        );
       }
 
-      // Generar nombre único con timestamp
+      const mimeType = matches[1];
+      const base64Data = base64Image.replace(mimeTypeRegex, '');
+      const extension = mimeType.split('/')[1] === 'jpeg' ? 'jpg' : mimeType.split('/')[1];
+
+      // Convertir base64 a Buffer (datos binarios)
+      let imageBuffer: Buffer;
+      try {
+        imageBuffer = Buffer.from(base64Data, 'base64');
+      } catch (error) {
+        throw new BadRequestException('Error al decodificar la imagen Base64');
+      }
+
+      // Generar nombre único con timestamp y extensión
       const uniqueFileName = `${fileName}-${Date.now()}.${extension}`;
       const blockBlobClient = this.containerClient.getBlockBlobClient(uniqueFileName);
 
-      // Subir la imagen
+      // Subir la imagen con headers HTTP
       await blockBlobClient.uploadData(imageBuffer, {
         blobHTTPHeaders: {
-          blobContentType: contentType,
+          blobContentType: mimeType,
         },
       });
 
-      console.log(`✅ Imagen subida: ${uniqueFileName}`);
+      console.log(`✅ Imagen subida exitosamente: ${uniqueFileName}`);
       return blockBlobClient.url;
     } catch (error) {
       console.error('❌ Error subiendo imagen a Azure:', error);
-      throw new BadRequestException('Error al subir la imagen');
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Error al subir la imagen a Azure Storage');
     }
   }
 

@@ -16,6 +16,16 @@ export class AuthController {
     };
   }
 
+  @Post('auth/resident')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async loginResident(@Body() loginDto: LoginDto): Promise<{ success: boolean; data: { access_token: string; resident_id: string } }> {
+    const result = await this.authService.loginResident(loginDto);
+    return {
+      success: true,
+      data: result
+    };
+  }
+
   @Post('auth/admin')
   async loginAdmin(@Body() loginDto: LoginDto) {
     return this.authService.loginAdmin(loginDto);

@@ -37,6 +37,8 @@ services:
       PG_DB: ${PG_DB}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
+      ACCOUNT_NAME: ${ACCOUNT_NAME}
+      ACCOUNT_KEY: ${ACCOUNT_KEY}
     
     depends_on:
       db:

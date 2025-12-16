@@ -1,0 +1,80 @@
+============================================================
+ANÁLISIS DE ERROR Y SOLUCIÓN DE SUBIDA DE IMAGEN A AZURE
+============================================================
+
+Fecha del documento: 2025-12-15
+
+### 1. ERROR DETECTADO
+
+El error original reportado en el registro es:
+
+    ReferenceError: crypto is not defined
+
+Este error se produce al intentar subir una imagen usando el SDK de Azure Blob Storage desde un entorno de React Native/Expo.
+
+### 2. CAUSA RAÍZ (REACT NATIVE / EXPO)
+
+El SDK de Azure Storage Blob está diseñado principalmente para entornos Node.js o navegador web completo. El entorno de React Native (incluso con Expo) no proporciona el módulo global nativo de Node.js `crypto`, que es requerido por las dependencias internas del SDK de Azure (específicamente por las utilidades que generan UUIDs aleatorios, como se vio en la traza: `randomUUID` y `uuidUtils.ts`).
+
+Solución: **Mover toda la lógica de Azure (donde se usan las claves secretas) al Backend.**
+
+### 3. ARQUITECTURA DE SOLUCIÓN RECOMENDADA: BACKEND PROXY (NESTJS)
+
+Dado que la aplicación móvil (Frontend) ya está enviando la imagen codificada en Base64 en una solicitud POST a un endpoint existente (`/api/resident/{resident_id}/profile-picture`), la solución más rápida y segura es implementar un **Backend Proxy** en NestJS.
+
+**Flujo de la Subida (Backend Proxy):**
+
+1. **Frontend (React Native):** Envía la imagen en Base64 en el cuerpo JSON al endpoint de NestJS.
+2. **Backend (NestJS API):**
+    a. Recibe la Base64.
+    b. **Decodifica** la Base64 a un `Buffer` (datos binarios).
+    c. Usa el **Azure Storage SDK** (de forma segura, con claves secretas de entorno) para subir el `Buffer` al Blob.
+    d. Guarda la URL final del Blob en la Base de Datos.
+    e. Responde al Frontend con la confirmación.
+
+### 4. IMPLEMENTACIÓN EN NESTJS (CÓDIGO DE EJEMPLO)
+
+Se requiere la librería `@azure/storage-blob`.
+
+**A. Servicio de Azure Blob Storage (src/azure-blob/azure-blob.service.ts)**
+
+Este servicio maneja la inicialización del cliente de Azure y la subida del Buffer.
+
+```typescript
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { 
+    BlobServiceClient, 
+    StorageSharedKeyCredential 
+} from '@azure/storage-blob';
+// Se asume que las variables de entorno (AZURE_ACCOUNT_NAME, AZURE_ACCOUNT_KEY) están configuradas
+
+@Injectable()
+export class AzureBlobService {
+    private blobServiceClient: BlobServiceClient;
+    private readonly containerName: string = 'profile-pictures'; 
+
+    constructor() {
+        // ... (Lógica de inicialización con credenciales de entorno)
+        // ...
+    }
+
+    async uploadImageBuffer(buffer: Buffer, residentId: string, mimeType: string): Promise<string> {
+        const fileExtension = mimeType.split('/')[1] || 'jpg';
+        // Nombre del blob: ID_RESIDENTE/TIMESTAMP.EXT
+        const blobName = `${residentId}/${Date.now()}.${fileExtension}`; 
+        
+        try {
+            const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
+            const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+
+            await blockBlobClient.upload(buffer, buffer.length, {
+                blobHTTPHeaders: { blobContentType: mimeType } 
+            });
+
+            return blockBlobClient.url;
+        } catch (error) {
+            // ... (Manejo de errores)
+            // ...
+        }
+    }
+}
