@@ -36,4 +36,7 @@ export class CreateResidentDTO {
 
     @IsOptional()
     profilePicture: string;
+
+    @IsOptional()
+    face_vector: string;
 }
