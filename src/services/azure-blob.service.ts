@@ -57,11 +57,17 @@ export class AzureBlobService {
     }
 
     try {
+      console.log('🔵 [Azure] Iniciando uploadImage con fileName:', fileName);
+      
       // Regex para extraer MIME type y datos base64
       const mimeTypeRegex = /^data:(image\/[a-z]+);base64,/;
       const matches = base64Image.match(mimeTypeRegex);
       
+      console.log('🔵 [Azure] Validando formato base64...');
+      console.log('🔵 [Azure] Imagen base64 inicio:', base64Image?.substring(0, 50) || 'null');
+      
       if (!matches) {
+        console.error('❌ [Azure] Formato base64 inválido');
         throw new BadRequestException(
           'Formato de imagen base64 inválido. Use: data:image/[tipo];base64,[datos]'
         );
@@ -71,29 +77,46 @@ export class AzureBlobService {
       const base64Data = base64Image.replace(mimeTypeRegex, '');
       const extension = mimeType.split('/')[1] === 'jpeg' ? 'jpg' : mimeType.split('/')[1];
 
+      console.log('🔵 [Azure] MIME Type extraído:', mimeType);
+      console.log('🔵 [Azure] Extension:', extension);
+      console.log('🔵 [Azure] Base64 data length:', base64Data.length);
+
       // Convertir base64 a Buffer (datos binarios)
       let imageBuffer: Buffer;
       try {
+        console.log('🔵 [Azure] Convirtiendo base64 a Buffer...');
         imageBuffer = Buffer.from(base64Data, 'base64');
+        console.log('🔵 [Azure] Buffer creado. Size:', imageBuffer.length, 'bytes');
       } catch (error) {
+        console.error('❌ [Azure] Error decodificando base64:', error);
         throw new BadRequestException('Error al decodificar la imagen Base64');
       }
 
       // Generar nombre único con timestamp y extensión
       const uniqueFileName = `${fileName}-${Date.now()}.${extension}`;
+      console.log('🔵 [Azure] Nombre único generado:', uniqueFileName);
+      
       const blockBlobClient = this.containerClient.getBlockBlobClient(uniqueFileName);
 
       // Subir la imagen con headers HTTP
+      console.log('🔵 [Azure] Iniciando uploadData...');
       await blockBlobClient.uploadData(imageBuffer, {
         blobHTTPHeaders: {
           blobContentType: mimeType,
         },
       });
 
-      console.log(`✅ Imagen subida exitosamente: ${uniqueFileName}`);
-      return blockBlobClient.url;
+      console.log(`✅ [Azure] Imagen subida exitosamente: ${uniqueFileName}`);
+      const url = blockBlobClient.url;
+      console.log('✅ [Azure] URL generada:', url);
+      return url;
     } catch (error) {
-      console.error('❌ Error subiendo imagen a Azure:', error);
+      console.error('❌ [Azure] Error subiendo imagen a Azure:', {
+        errorName: error.name,
+        errorMessage: error.message,
+        errorCode: error.code,
+        errorStack: error.stack
+      });
       if (error instanceof BadRequestException) {
         throw error;
       }

@@ -88,28 +88,50 @@ export class ResidentController {
         @Param('id') id: string,
         @Body() uploadImageDto: UploadImageDto
     ) {
-        console.log('📸 Subiendo imagen de perfil para residente:', id);
+        console.log('📸 [START] Subiendo imagen de perfil para residente:', id);
+        console.log('📸 [DTO] uploadImageDto:', uploadImageDto);
         
-        // Subir imagen a Azure Blob Storage
-        const imageUrl = await this.azureBlobService.uploadImage(
-            uploadImageDto.image,
-            `resident-${id}`
-        );
-        
-        // Actualizar el perfil del residente con la nueva URL
-        const updatedResident = await this.residentService.updateResident(id, {
-            profilePicture: imageUrl
-        });
-        
-        console.log('✅ Imagen de perfil actualizada:', imageUrl);
-        
-        return {
-            success: true,
-            data: {
-                profilePicture: imageUrl,
-                resident: updatedResident
-            }
-        };
+        try {
+            console.log('📸 [STEP 1] Iniciando subida a Azure Blob Storage...');
+            console.log('📸 [STEP 1] Datos de imagen:', {
+                imageSizeChars: uploadImageDto.image?.length || 0,
+                imagePrefix: uploadImageDto.image?.substring(0, 50) || 'null'
+            });
+            
+            // Subir imagen a Azure Blob Storage
+            const imageUrl = await this.azureBlobService.uploadImage(
+                uploadImageDto.image,
+                `resident-${id}`
+            );
+            
+            console.log('📸 [STEP 2] Imagen subida exitosamente. URL:', imageUrl);
+            console.log('📸 [STEP 3] Actualizando perfil del residente con la nueva URL...');
+            
+            // Actualizar el perfil del residente con la nueva URL
+            const updatedResident = await this.residentService.updateResident(id, {
+                profilePicture: imageUrl
+            });
+            
+            console.log('✅ [SUCCESS] Imagen de perfil actualizada para residente:', id);
+            console.log('✅ [SUCCESS] URL guardada:', imageUrl);
+            
+            return {
+                success: true,
+                data: {
+                    profilePicture: imageUrl,
+                    resident: updatedResident
+                }
+            };
+        } catch (error) {
+            console.error('❌ [ERROR] Error en uploadProfilePicture:', {
+                residentId: id,
+                errorName: error.name,
+                errorMessage: error.message,
+                errorStack: error.stack,
+                errorCode: error.code
+            });
+            throw error;
+        }
     }
 
     @Patch(':id/deactivate')
